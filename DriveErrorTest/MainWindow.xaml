@@ -81,11 +81,20 @@
 				Grid.Row="4" 
 				Content="Открыть лог"
 				Click="BtShowLog_OnClick"/>
-		<StackPanel Orientation="Horizontal" 
-					Grid.Column="0" 
-					Grid.Row="5" >
-			<Label Margin="3,3,0,3" Content="Состояние:"/>
-			<Label Name="LbStatusStrip" Margin="0,3,3,3"/>
+        <StackPanel Grid.Column="0" 
+					Grid.Row="5">
+		<StackPanel Orientation="Horizontal">
+			<Label Margin="3,0,0,0" Content="Состояние:"/>
+			<Label Name="LbStatusStrip" Margin="0,0,0,0"/>
 		</StackPanel>
+			<StackPanel Orientation="Horizontal">
+                <Label Margin="3,0,0,0" Content="Циклов записи:"/>
+                <Label Name="LbWriteCyclesStrip" Margin="0,0,0,0"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Margin="3,0,0,0" Content="Текущий файл:"/>
+                <Label Name="LbCurrFileStrip" Margin="0,0,0,0"/>
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </Window>

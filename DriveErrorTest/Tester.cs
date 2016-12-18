@@ -3,12 +3,13 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
+using System.Windows.Shell;
+using System.Threading;
 
 namespace DriveErrorTest
 {
 	internal class Tester
 	{
-		private bool _running; 
 		private readonly DriveInfo _drive;
 		private readonly DirectoryInfo _sourceDirectory;
 		private readonly TimeSpan _updatePeriod;
@@ -17,6 +18,9 @@ namespace DriveErrorTest
 		private int _errorsNum;
 		private readonly Dictionary<string, bool> _files = new Dictionary<string, bool>();
 		private readonly FileInfo _logFile;
+		private int _writeCycles;
+
+		public bool IsRunning { get; private set; }
 
 		public Tester(MainWindow parentWindow, DriveInfo drive, string dataPath, string logPath, TimeSpan updatePeriod)
 		{
@@ -28,13 +32,15 @@ namespace DriveErrorTest
 			_errorsNum = 0;
 		}
 
-		public void StartTest()
+		public void RunTest()
 		{
-			_running = true;
+			IsRunning = true;
 			Utilities.LogEvent(_logFile, DateTime.Now, "Тестирование запущено");
+			
+			_parentWindow.SetBackgroundColor(Color.FromRgb(255, 255, 255));
 			do { } while (!LoadFilesToDrive());
 
-			while (_running)
+			while (IsRunning)
 			{
 				if (DateTime.Now - _lastUpdateTime > _updatePeriod)
 					do { } while (!LoadFilesToDrive());
@@ -42,36 +48,24 @@ namespace DriveErrorTest
 				RunCheckCycle();
 				SetErrorStatus();
 			}
+
+			_parentWindow.SetCurrentFile("");
+			_parentWindow.SetBackgroundColor(Color.FromRgb(255, 255, 255));
+			_parentWindow.SetTaskbarStatus(TaskbarItemProgressState.None, 0);
+			Utilities.LogEvent(_logFile, DateTime.Now, "Тестирование прервано");
+			_parentWindow.SetTestingStatusText("остановлено");
 		}
 
 		public void StopTest()
 		{
-			_parentWindow.SetBackgroundColor(Color.FromRgb(255, 255, 255));
-			Utilities.LogEvent(_logFile, DateTime.Now, "Тестирование прервано");
-			_running = false;
+			IsRunning = false;
 		}
 
 		private void RunCheckCycle()
 		{
-			var filesFromDrive = new List<string>();
-			
-			try
-			{
-				var driveEnumeration = Utilities.Traverse(_drive.RootDirectory.FullName);
+			var filesFromDrive = Utilities.GetFilesOnDrive(_drive);
 
-				foreach (var item in driveEnumeration)
-				{
-					var attribute = File.GetAttributes(item);
-					if (attribute.HasFlag(FileAttributes.Directory))
-						continue;
-
-					var actualFilename = item.Substring(_drive.RootDirectory.FullName.Length,
-						item.Length - _drive.RootDirectory.FullName.Length);
-					if (!actualFilename.Contains("\\System Volume Information\\"))
-						filesFromDrive.Add(actualFilename);
-				}
-			}
-			catch (Exception)
+			if (filesFromDrive == null)
 			{
 				_errorsNum++;
 				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось построить список файлов на устройстве");
@@ -90,6 +84,7 @@ namespace DriveErrorTest
 			{
 				foreach (var file in _files.Where(file => file.Value))
 				{
+					_parentWindow.SetCurrentFile(file.Key);
 					var index = filesFromDrive.IndexOf(file.Key);
 					if (index > -1)
 					{
@@ -103,25 +98,31 @@ namespace DriveErrorTest
 						catch (Exception)
 						{
 							_errorsNum++;
+							_files[file.Key] = false;
 							Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось сравнить версии файла " + file.Key);
 							continue;
 						}
 
-						if (!identical)
-						{
-							_files[file.Key] = false;
-							Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Файл " + file.Key + " не совпадает с исходным");
-							_errorsNum++;
-							SetErrorStatus();
-						}
+						if (identical)
+							continue;
+
+						_errorsNum++;
+						_files[file.Key] = false;
+						Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Файл " + file.Key + " не совпадает с исходным");
+						SetErrorStatus();
 					}
 					else
 					{
-						Utilities.LogEvent(_logFile, DateTime.Now,  "Ошибка! Файл " + file.Key + "не найден");
 						_errorsNum++;
+						_files[file.Key] = false;
+						Utilities.LogEvent(_logFile, DateTime.Now,  "Ошибка! Файл " + file.Key + " не найден");
 						SetErrorStatus();
 					}
+
+					Thread.Sleep(10);
 				}
+
+				_parentWindow.SetCurrentFile("");
 			}
 			catch (Exception)
 			{
@@ -130,14 +131,25 @@ namespace DriveErrorTest
 
 		private bool LoadFilesToDrive()
 		{
-			_parentWindow.SetStatusText("идет форматирование...");
+			_parentWindow.SetTestingStatusText("идет форматирование...");
 			if (!FormatDrive())
+			{
+				++_errorsNum;
+				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось форматировать устройство");
+				SetErrorStatus();
 				return false;
-			_parentWindow.SetStatusText("идет запись данных...");
+			}
+			_parentWindow.SetTestingStatusText("идет запись данных...");
 			if (!WriteFilesToDrive())
+			{
+				++_errorsNum;
+				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось записать данные на устройство");
+				SetErrorStatus();
 				return false;
+			}
 			_lastUpdateTime = DateTime.Now;
-			Utilities.LogEvent(_logFile, _lastUpdateTime, "Выполнена плановая перезапись данных");
+			Utilities.LogEvent(_logFile, _lastUpdateTime, "Выполнена плановая перезапись данных, проведено циклов записи - " + ++_writeCycles);
+			_parentWindow.SetWryteCycles(_writeCycles);
 			SetErrorStatus();
 
 			return true;
@@ -147,13 +159,21 @@ namespace DriveErrorTest
 		{
 			if (_errorsNum == 0)
 			{
-				_parentWindow.SetStatusText("выполняется, ошибок не найдено");
+				_parentWindow.SetTestingStatusText("ошибок не найдено");
 				_parentWindow.SetBackgroundColor(Color.FromRgb(191, 235, 171));
+				_parentWindow.SetTaskbarStatus(TaskbarItemProgressState.Normal, 1);
 			}
 			else
 			{
-				_parentWindow.SetStatusText("выполняется, обнаружено " + _errorsNum + " ошибок");
+				if (_errorsNum >= 100)
+				{
+					_parentWindow.BreakTestOnEmergency();
+					return;
+				}
+
+				_parentWindow.SetTestingStatusText("обнаружено " + _errorsNum + " ошибок");
 				_parentWindow.SetBackgroundColor(Color.FromRgb(245, 105, 105));
+				_parentWindow.SetTaskbarStatus(TaskbarItemProgressState.Error, 1);
 			}
 		}
 
@@ -161,7 +181,7 @@ namespace DriveErrorTest
 		{
 			try
 			{
-				return Utilities.FormatDriveWithCmd(_drive.Name[0]);
+				return Utilities.FormatDriveWithCmd(_drive.Name.Substring(0,2), _drive.VolumeLabel);
 			}
 			catch (Exception)
 			{
@@ -199,7 +219,6 @@ namespace DriveErrorTest
 				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось записать файлы на диск");
 				return false;
 			}
-			
 		}
 	}
 }

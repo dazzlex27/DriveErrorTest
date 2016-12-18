@@ -10,41 +10,30 @@ namespace DriveErrorTest
 {
 	public static class Utilities
 	{
-		public static bool FormatDriveWithCmd(char driveLetter, string label = "", string fileSystem = "NTFS",
-			bool quickFormat = true, bool enableCompression = false, int? clusterSize = null)
+		public static bool FormatDriveWithCmd(string driveName, string volumeLabel, bool useQuickFormat = true)
 		{
-			var success = false;
-			var drive = driveLetter + ":";
-			try
+			var labelNoSpaces = volumeLabel.Replace(' ', '_');
+			var r = new Random();
+			var filename = r.Next(10000000) + ".bat";
+			var sw = File.CreateText(filename);
+			sw.WriteLine("format " + driveName + " /y" + (useQuickFormat ? " /q" : "") + " /fs:NTFS" + " /v:" + labelNoSpaces);
+			sw.Close();
+			var proc1 = new Process
 			{
-				var psi = new ProcessStartInfo
+				StartInfo =
 				{
-					FileName = "format.com",
+					FileName = filename,
+					UseShellExecute = false,
+					Verb = "runas",
 					CreateNoWindow = true,
-					WorkingDirectory = Environment.SystemDirectory,
-					Arguments = "/FS:" + fileSystem +
-					            " /Y" +
-					            " /V:" + label +
-					            (quickFormat ? " /Q" : "") +
-					            ((fileSystem == "NTFS" && enableCompression) ? " /C" : "") +
-					            (clusterSize.HasValue ? " /A:" + clusterSize.Value : "") +
-					            " " + drive,
-					UseShellExecute = false
-				};
-				psi.CreateNoWindow = true;
-				psi.RedirectStandardOutput = true;
-				psi.RedirectStandardInput = true;
-				var formatProcess = Process.Start(psi);
-				var swStandardInput = formatProcess.StandardInput;
-				swStandardInput.WriteLine();
-				formatProcess.WaitForExit();
-				success = true;
-			}
-			catch (Exception)
-			{
-				
-			}
-			return success;
+					WindowStyle = ProcessWindowStyle.Hidden
+				}
+			};
+			proc1.Start();
+			proc1.WaitForExit();
+			File.Delete(filename);
+
+			return proc1.ExitCode == 0;
 		}
 
 		public static IEnumerable<string> Traverse(string rootDirectory)
@@ -102,11 +91,39 @@ namespace DriveErrorTest
 			}
 		}
 
-		public static void WriteToExcelFile(string filepath, DateTime timestamp, string message)
+		public static List<string> GetFilesOnDrive(DriveInfo drive)
 		{
 			try
 			{
-				var excelApp = new Excel.Application { Visible = false, DisplayAlerts = false };
+				var result = new List<string>();
+				var driveEnumeration = Traverse(drive.RootDirectory.FullName);
+
+				foreach (var item in driveEnumeration)
+				{
+					var attribute = File.GetAttributes(item);
+					if (attribute.HasFlag(FileAttributes.Directory))
+						continue;
+
+					var actualFilename = item.Substring(drive.RootDirectory.FullName.Length,
+						item.Length - drive.RootDirectory.FullName.Length);
+					if (!actualFilename.Contains(drive.RootDirectory.FullName + "\\System Volume Information\\"))
+						result.Add(actualFilename);
+				}
+
+				return result;
+			}
+			catch (Exception)
+			{
+				return null;
+			}
+		}
+
+		public static void WriteToExcelFile(string filepath, DateTime timestamp, string message)
+		{
+			var excelApp = new Excel.Application { Visible = false, DisplayAlerts = false };
+
+			try
+			{
 				var workbook = excelApp.Workbooks.Open(filepath);
 				var worksheet = (Excel.Worksheet)workbook.Worksheets.Item[1];
 				Excel.Range last = worksheet.Cells.SpecialCells(Excel.XlCellType.xlCellTypeLastCell, Type.Missing);
@@ -123,7 +140,7 @@ namespace DriveErrorTest
 			}
 			catch (Exception)
 			{
-				
+				excelApp.Quit();
 			}
 		}
 
@@ -150,6 +167,5 @@ namespace DriveErrorTest
 					throw new Exception("Неподдерживаемый формат лог файла!");
 			}
 		}
-
 	}
 }
