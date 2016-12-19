@@ -120,12 +120,12 @@ namespace DriveErrorTest
 
 		public static void WriteToExcelFile(string filepath, DateTime timestamp, string message)
 		{
-			var excelApp = new Excel.Application { Visible = false, DisplayAlerts = false };
+			var excelApp = new Excel.Application {Visible = false, DisplayAlerts = false};
 
 			try
 			{
 				var workbook = excelApp.Workbooks.Open(filepath);
-				var worksheet = (Excel.Worksheet)workbook.Worksheets.Item[1];
+				var worksheet = (Excel.Worksheet) workbook.Worksheets.Item[1];
 				Excel.Range last = worksheet.Cells.SpecialCells(Excel.XlCellType.xlCellTypeLastCell, Type.Missing);
 				Excel.Range range = worksheet.get_Range("A1", last);
 				int lastUsedRow = last.Row;
