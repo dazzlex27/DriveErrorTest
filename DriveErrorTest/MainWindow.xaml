@@ -38,41 +38,47 @@
                 <TextBlock Text="Путь к данным"/>
             </GroupBox.Header>
             <StackPanel>
-				<StackPanel>
-                <Label Name="LbInputPath" 
+                <StackPanel>
+                    <Label Name="LbInputPath" 
 					   Margin="0,3,3,0"
 				   MaxWidth="270"
 				   HorizontalAlignment="Left"
 				   Content="&lt;Источник данных не выбран&gt;"/>
-                <Button Name="BtSelectSourcePath" 
+                    <Button Name="BtSelectSourcePath" 
 						Margin="3,0,3,3"
 						Padding="10,5"
 						HorizontalAlignment="Left" 
 						Content="Выбрать папку с данными..."
 						Click="BtSelectTestData_OnClick"/>
-				</StackPanel>
-				<StackPanel>
-					<Label Name="LbLogPath" 
+                </StackPanel>
+                <StackPanel>
+                    <Label Name="LbLogPath" 
 					   Margin="0,3,3,0"
 				   MaxWidth="270"
 				   HorizontalAlignment="Left"
 				   Content="&lt;Журнал не выбран&gt;"/>
-					<Button Name="BtSelectLogPath" 
+                    <Button Name="BtSelectLogPath" 
 						Margin="3,0,3,3"
 						Padding="10,5"
 						HorizontalAlignment="Left" 
 						Content="Выбрать файл журнала..."
 						Click="BtSelectLogPath_OnClick"/>
-				</StackPanel>
-			</StackPanel>
+                </StackPanel>
+            </StackPanel>
         </GroupBox>
-        <Button Name="BtLaunchTesting" Margin="6,5"
+        <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="3">
+			<Button Name="BtLaunchTesting" Margin="6,5"
 				Padding="10,5"
 				HorizontalAlignment="Left" 
-				Grid.Column="0" 
-				Grid.Row="3" 
 				Content="Запустить тестирование"
 				Click="BtLaunchTesting_OnClick"/>
+			<CheckBox Name="CbCleanStart" Margin="5" VerticalAlignment="Center" 
+					  Content="Очистить" 
+					  Checked="ToggleButton_OnChecked" 
+					  Unchecked="ToggleButton_OnUnchecked"
+					  ToolTip="Форматировать устройство перед началом тестирования">
+			</CheckBox>
+        </StackPanel>
         <Button Name="BtShowLog" 
 				Margin="6,5"
 				Padding="10,5"

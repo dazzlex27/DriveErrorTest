@@ -91,12 +91,12 @@ namespace DriveErrorTest
 			}
 		}
 
-		public static List<string> GetFilesOnDrive(DriveInfo drive)
+		public static List<string> GetFilesInDirectory(DirectoryInfo directory)
 		{
 			try
 			{
 				var result = new List<string>();
-				var driveEnumeration = Traverse(drive.RootDirectory.FullName);
+				var driveEnumeration = Traverse(directory.FullName);
 
 				foreach (var item in driveEnumeration)
 				{
@@ -104,9 +104,9 @@ namespace DriveErrorTest
 					if (attribute.HasFlag(FileAttributes.Directory))
 						continue;
 
-					var actualFilename = item.Substring(drive.RootDirectory.FullName.Length,
-						item.Length - drive.RootDirectory.FullName.Length);
-					if (!actualFilename.Contains(drive.RootDirectory.FullName + "\\System Volume Information\\"))
+					var actualFilename = item.Substring(directory.FullName.Length,
+						item.Length - directory.FullName.Length);
+					if (!actualFilename.Contains(directory + "\\System Volume Information\\"))
 						result.Add(actualFilename);
 				}
 
@@ -136,9 +136,12 @@ namespace DriveErrorTest
 					Excel.XlSaveAsAccessMode.xlNoChange, Type.Missing, Type.Missing, Type.Missing,
 					Type.Missing, Type.Missing);
 				workbook.Close();
-				excelApp.Quit();
 			}
 			catch (Exception)
+			{
+				
+			}
+			finally
 			{
 				excelApp.Quit();
 			}

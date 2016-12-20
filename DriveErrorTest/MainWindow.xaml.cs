@@ -20,6 +20,7 @@ namespace DriveErrorTest
 		private string _logPath = "";
 		private Thread _t;
 		private Tester _tester;
+		private bool _cleanStart;
 
 		public MainWindow()
 		{
@@ -77,6 +78,7 @@ namespace DriveErrorTest
 			CbDrives.IsEnabled = active;
 			BtSelectSourcePath.IsEnabled = active;
 			BtSelectLogPath.IsEnabled = active;
+			CbCleanStart.IsEnabled = active;
 		}
 
 		private void BtSelectTestData_OnClick(object sender, RoutedEventArgs e)
@@ -303,6 +305,7 @@ namespace DriveErrorTest
 			}
 
 			_tester = new Tester(this, Drives[GetSelectedIndex(CbDrives)], _sourcePath, _logPath, span);
+			_tester.CleanStart = _cleanStart;
 			_tester.RunTest();
 		}
 
@@ -347,6 +350,16 @@ namespace DriveErrorTest
 			}
 
 			Environment.Exit(0);
+		}
+
+		private void ToggleButton_OnChecked(object sender, RoutedEventArgs e)
+		{
+			_cleanStart = true;
+		}
+
+		private void ToggleButton_OnUnchecked(object sender, RoutedEventArgs e)
+		{
+			_cleanStart = false;
 		}
 	}
 }

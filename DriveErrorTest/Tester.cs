@@ -22,6 +22,8 @@ namespace DriveErrorTest
 
 		public bool IsRunning { get; private set; }
 
+		public bool CleanStart { get; set; }
+
 		public Tester(MainWindow parentWindow, DriveInfo drive, string dataPath, string logPath, TimeSpan updatePeriod)
 		{
 			_parentWindow = parentWindow;
@@ -36,14 +38,19 @@ namespace DriveErrorTest
 		{
 			IsRunning = true;
 			Utilities.LogEvent(_logFile, DateTime.Now, "Тестирование запущено");
-			
-			_parentWindow.SetBackgroundColor(Color.FromRgb(255, 255, 255));
-			do { } while (!LoadFilesToDrive());
+
+			if (CleanStart)
+				do { } while (!LoadFilesToDrive() && IsRunning);
+			else
+			{
+				GetFilesFromSourceDirectory();
+				_lastUpdateTime = DateTime.Now;
+			}
 
 			while (IsRunning)
 			{
 				if (DateTime.Now - _lastUpdateTime > _updatePeriod)
-					do { } while (!LoadFilesToDrive());
+					do { } while (!LoadFilesToDrive() && IsRunning);
 
 				RunCheckCycle();
 				SetErrorStatus();
@@ -63,7 +70,7 @@ namespace DriveErrorTest
 
 		private void RunCheckCycle()
 		{
-			var filesFromDrive = Utilities.GetFilesOnDrive(_drive);
+			var filesFromDrive = Utilities.GetFilesInDirectory(_drive.RootDirectory);
 
 			if (filesFromDrive == null)
 			{
@@ -131,7 +138,7 @@ namespace DriveErrorTest
 
 		private bool LoadFilesToDrive()
 		{
-			_parentWindow.SetTestingStatusText("идет форматирование...");
+			_parentWindow.SetTestingStatusText("форматирование...");
 			if (!FormatDrive())
 			{
 				++_errorsNum;
@@ -139,7 +146,11 @@ namespace DriveErrorTest
 				SetErrorStatus();
 				return false;
 			}
-			_parentWindow.SetTestingStatusText("идет запись данных...");
+
+			_parentWindow.SetTestingStatusText("получение списка файлов...");
+			GetFilesFromSourceDirectory();
+
+			_parentWindow.SetTestingStatusText("запись данных...");
 			if (!WriteFilesToDrive())
 			{
 				++_errorsNum;
@@ -147,6 +158,7 @@ namespace DriveErrorTest
 				SetErrorStatus();
 				return false;
 			}
+
 			_lastUpdateTime = DateTime.Now;
 			Utilities.LogEvent(_logFile, _lastUpdateTime, "Выполнена плановая перезапись данных, проведено циклов записи - " + ++_writeCycles);
 			_parentWindow.SetWryteCycles(_writeCycles);
@@ -195,7 +207,6 @@ namespace DriveErrorTest
 		{
 			try
 			{
-				_files.Clear();
 				// Create all of the directories
 				foreach (var dirPath in Directory.GetDirectories(_sourceDirectory.FullName, "*",
 					SearchOption.AllDirectories))
@@ -205,9 +216,6 @@ namespace DriveErrorTest
 				foreach (var path in Directory.GetFiles(_sourceDirectory.FullName, "*",
 					SearchOption.AllDirectories))
 				{
-					var actualFilename = path.Substring(_sourceDirectory.FullName.Length + 1,
-						path.Length - _sourceDirectory.FullName.Length - 1);
-					_files.Add(actualFilename, true);
 					File.Copy(path, path.Replace(_sourceDirectory.FullName, _drive.RootDirectory.FullName), true);
 				}
 
@@ -217,6 +225,27 @@ namespace DriveErrorTest
 			{
 				_errorsNum++;
 				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось записать файлы на диск");
+				return false;
+			}
+		}
+
+		private bool GetFilesFromSourceDirectory()
+		{
+			try
+			{
+				_files.Clear();
+				var filesFromSourceDirectory = Utilities.GetFilesInDirectory(_sourceDirectory);
+				foreach (var path in filesFromSourceDirectory)
+				{
+					var actualFilename = path.Substring(1, path.Length - 1);
+					_files.Add(actualFilename, true);
+				}
+
+				return true;
+			}
+			catch (Exception)
+			{
+				Utilities.LogEvent(_logFile, DateTime.Now, "Не удалось получить список файлов в источнике");
 				return false;
 			}
 		}
