@@ -26,7 +26,7 @@ namespace DriveErrorTest
 
 		public Tester(MainWindow parentWindow, DriveInfo drive, string dataPath, string logPath, TimeSpan updatePeriod)
 		{
-			_parentWindow = parentWindow;
+            _parentWindow = parentWindow;
 			_drive = drive;
 			_sourceDirectory = new DirectoryInfo(dataPath);
 			_logFile = new FileInfo(logPath);
@@ -125,6 +125,7 @@ namespace DriveErrorTest
 						Utilities.LogEvent(_logFile, DateTime.Now,  "Ошибка! Файл " + file.Key + " не найден");
 						SetErrorStatus();
 					}
+
 
 					Thread.Sleep(10);
 				}

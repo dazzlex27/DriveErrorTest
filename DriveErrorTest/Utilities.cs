@@ -73,13 +73,33 @@ namespace DriveErrorTest
 
 		public static bool CompareTwoFiles(string filepath1, string filepath2)
 		{
-			var bytes1 = File.ReadAllBytes(filepath1);
-			var bytes2 = File.ReadAllBytes(filepath2);
+			using (var file = File.Open(filepath1, FileMode.Open, FileAccess.Read, FileShare.Read))
+			{
+				using (var file2 = File.Open(filepath2, FileMode.Open, FileAccess.Read, FileShare.Read))
+				{
+					if (file.Length != file2.Length)
+						return false;
 
-			if (bytes1.Length != bytes2.Length)
-				return false;
+					int count;
+					const int size = 0x1000000;
 
-			return !bytes1.Where((t, i) => t != bytes2[i]).Any();
+					var buffer = new byte[size];
+					var buffer2 = new byte[size];
+
+					while ((count = file.Read(buffer, 0, buffer.Length)) > 0)
+					{
+						file2.Read(buffer2, 0, buffer2.Length);
+
+						for (var i = 0; i < count; i++)
+						{
+							if (buffer[i] != buffer2[i])
+								return false;
+						}
+					}
+				}
+			}
+
+			return true;
 		}
 
 		public static void WriteToTxtFile(string filepath, string message)
