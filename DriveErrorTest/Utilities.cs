@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Permissions;
-using Excel = Microsoft.Office.Interop.Excel;
+using System.Text;
 
 namespace DriveErrorTest
 {
@@ -16,7 +16,8 @@ namespace DriveErrorTest
 			var r = new Random();
 			var filename = r.Next(10000000) + ".bat";
 			var sw = File.CreateText(filename);
-			sw.WriteLine("format " + driveName + " /y" + (useQuickFormat ? " /q" : "") + " /fs:NTFS" + " /v:" + labelNoSpaces);
+			sw.WriteLine("format " + driveName + " /y" + (useQuickFormat ? " /q" : "") + " /fs:NTFS" + " /v:" + labelNoSpaces +
+			             "&& label " + driveName + " " + volumeLabel);
 			sw.Close();
 			var proc1 = new Process
 			{
@@ -113,78 +114,54 @@ namespace DriveErrorTest
 
 		public static List<string> GetFilesInDirectory(DirectoryInfo directory)
 		{
-			try
+			var result = new List<string>();
+			var driveEnumeration = Traverse(directory.FullName);
+
+			foreach (var item in driveEnumeration)
 			{
-				var result = new List<string>();
-				var driveEnumeration = Traverse(directory.FullName);
+				var attribute = File.GetAttributes(item);
+				if (attribute.HasFlag(FileAttributes.Directory))
+					continue;
 
-				foreach (var item in driveEnumeration)
-				{
-					var attribute = File.GetAttributes(item);
-					if (attribute.HasFlag(FileAttributes.Directory))
-						continue;
-
-					var actualFilename = item.Substring(directory.FullName.Length,
-						item.Length - directory.FullName.Length);
-					if (!actualFilename.Contains(directory + "\\System Volume Information\\"))
-						result.Add(actualFilename);
-				}
-
-				return result;
+				var actualFilename = item.Substring(directory.FullName.Length,
+					item.Length - directory.FullName.Length);
+				if (!actualFilename.Contains(directory + "\\System Volume Information\\"))
+					result.Add(actualFilename);
 			}
-			catch (Exception)
-			{
-				return null;
-			}
+
+			return result;
 		}
 
-		public static void WriteToExcelFile(string filepath, DateTime timestamp, string message)
+		public static void WriteToCsv(string filepath, DateTime timestamp, string message, string exceptionText)
 		{
-			var excelApp = new Excel.Application {Visible = false, DisplayAlerts = false};
-
 			try
 			{
-				var workbook = excelApp.Workbooks.Open(filepath);
-				var worksheet = (Excel.Worksheet) workbook.Worksheets.Item[1];
-				Excel.Range last = worksheet.Cells.SpecialCells(Excel.XlCellType.xlCellTypeLastCell, Type.Missing);
-				Excel.Range range = worksheet.get_Range("A1", last);
-				int lastUsedRow = last.Row;
-				worksheet.Cells[lastUsedRow + 1, 1] = timestamp.ToShortDateString();
-				worksheet.Cells[lastUsedRow + 1, 2] = timestamp.ToLongTimeString();
-				worksheet.Cells[lastUsedRow + 1, 3] = message;
-				workbook.SaveAs(filepath, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-					Excel.XlSaveAsAccessMode.xlNoChange, Type.Missing, Type.Missing, Type.Missing,
-					Type.Missing, Type.Missing);
-				workbook.Close();
+				var delimiter = ';';
+				var result = Environment.NewLine + timestamp.ToShortDateString() + delimiter + timestamp.ToLongTimeString() + delimiter + message +
+							 (exceptionText == ""
+								 ? ""
+								 : delimiter + exceptionText);
+				File.AppendAllText(filepath, result, Encoding.Default);
 			}
 			catch (Exception)
 			{
-				
-			}
-			finally
-			{
-				excelApp.Quit();
 			}
 		}
 
-		public static void LogEvent(FileInfo logpath, DateTime timestamp, string message)
+		public static void LogEvent(FileInfo logpath, DateTime timestamp, string message, string exceptionText = "")
 		{
 			if (!logpath.Exists)
 				File.Create(logpath.FullName);
 
-			var timestampString = timestamp.ToShortDateString() + " " + timestamp.ToLongTimeString();
-
 			switch (logpath.Extension)
 			{
 				case ".txt":
+					var timestampString = timestamp.ToShortDateString() + " " + timestamp.ToLongTimeString();
 					WriteToTxtFile(logpath.FullName,
-						timestampString + " " + message);
+						timestampString + " " + message + " Текст ошибки: " + exceptionText);
 					break;
-				case ".xls":
-					WriteToExcelFile(logpath.FullName, timestamp, message);
-					break;
-				case ".xlsx":
-					WriteToExcelFile(logpath.FullName, timestamp, message);
+				case ".csv":
+					WriteToCsv(logpath.FullName, timestamp, message, exceptionText);
 					break;
 				default:
 					throw new Exception("Неподдерживаемый формат лог файла!");

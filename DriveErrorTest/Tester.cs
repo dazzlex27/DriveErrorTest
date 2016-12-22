@@ -18,6 +18,7 @@ namespace DriveErrorTest
 		private int _errorsNum;
 		private readonly Dictionary<string, bool> _files = new Dictionary<string, bool>();
 		private readonly FileInfo _logFile;
+		private ulong _readCycles;
 		private int _writeCycles;
 
 		public bool IsRunning { get; private set; }
@@ -40,7 +41,9 @@ namespace DriveErrorTest
 			Utilities.LogEvent(_logFile, DateTime.Now, "Тестирование запущено");
 
 			if (CleanStart)
+			{
 				do { } while (!LoadFilesToDrive() && IsRunning);
+			}
 			else
 			{
 				GetFilesFromSourceDirectory();
@@ -50,7 +53,10 @@ namespace DriveErrorTest
 			while (IsRunning)
 			{
 				if (DateTime.Now - _lastUpdateTime > _updatePeriod)
+				{
+					Utilities.LogEvent(_logFile, DateTime.Now, "Цикл чтения окончен. Всего итераций чтения - " + _readCycles);
 					do { } while (!LoadFilesToDrive() && IsRunning);
+				}
 
 				RunCheckCycle();
 				SetErrorStatus();
@@ -68,20 +74,30 @@ namespace DriveErrorTest
 			IsRunning = false;
 		}
 
+		private void IncrementErrorCount()
+		{
+			++_errorsNum;
+			SetErrorStatus();
+		}
+
 		private void RunCheckCycle()
 		{
-			var filesFromDrive = Utilities.GetFilesInDirectory(_drive.RootDirectory);
+			List<string> filesFromDrive;
 
-			if (filesFromDrive == null)
+			try
 			{
-				_errorsNum++;
-				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось построить список файлов на устройстве");
+				filesFromDrive = Utilities.GetFilesInDirectory(_drive.RootDirectory);
+			}
+			catch (Exception ex)
+			{
+				IncrementErrorCount();
+				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось построить список файлов на устройстве", ex.ToString());
 				return;
 			}
 			
 			if (filesFromDrive.Count != _files.Count)
 			{
-				_errorsNum++;
+				IncrementErrorCount();
 				Utilities.LogEvent(_logFile,
 					DateTime.Now,
 					"Ошибка! Количество файлов не совпадает. Ожидалось - " + _files.Count + ", посчитано - " + filesFromDrive.Count);
@@ -89,51 +105,64 @@ namespace DriveErrorTest
 
 			try
 			{
-				foreach (var file in _files.Where(file => file.Value))
-				{
-					_parentWindow.SetCurrentFile(file.Key);
-					var index = filesFromDrive.IndexOf(file.Key);
-					if (index > -1)
-					{
-						bool identical;
-
-						try
-						{
-							identical = Utilities.CompareTwoFiles(Path.Combine(_sourceDirectory.FullName, file.Key),
-								Path.Combine(_drive.RootDirectory.FullName, filesFromDrive[index]));
-						}
-						catch (Exception)
-						{
-							_errorsNum++;
-							_files[file.Key] = false;
-							Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось сравнить версии файла " + file.Key);
-							continue;
-						}
-
-						if (identical)
-							continue;
-
-						_errorsNum++;
-						_files[file.Key] = false;
-						Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Файл " + file.Key + " не совпадает с исходным");
-						SetErrorStatus();
-					}
-					else
-					{
-						_errorsNum++;
-						_files[file.Key] = false;
-						Utilities.LogEvent(_logFile, DateTime.Now,  "Ошибка! Файл " + file.Key + " не найден");
-						SetErrorStatus();
-					}
-
-
-					Thread.Sleep(10);
-				}
+				CompareAllFiles(filesFromDrive);
+			}
+			catch (Exception ex)
+			{
+				IncrementErrorCount();
+				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось выполнить чтение с устройства", ex.ToString());
+			}
+			finally
+			{
 
 				_parentWindow.SetCurrentFile("");
+
+				Thread.Sleep(10);
 			}
-			catch (Exception)
+		}
+
+		private void CompareAllFiles(List<string> filesFromDrive)
+		{
+			foreach (var file in _files.Where(file => file.Value))
 			{
+				_parentWindow.SetCurrentFile(file.Key);
+				var index = filesFromDrive.IndexOf(file.Key);
+				if (index > -1)
+				{
+					bool identical;
+
+					try
+					{
+						identical = Utilities.CompareTwoFiles(Path.Combine(_sourceDirectory.FullName, file.Key),
+							Path.Combine(_drive.RootDirectory.FullName, filesFromDrive[index]));
+					}
+					catch (Exception ex)
+					{
+						_errorsNum++;
+						_files[file.Key] = false;
+						Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось сравнить версии файла " + file.Key, ex.ToString());
+						continue;
+					}
+					finally
+					{
+						_parentWindow.SetReadCycles(++_readCycles);
+					}
+
+					if (identical)
+						continue;
+
+					_errorsNum++;
+					_files[file.Key] = false;
+					Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Файл " + file.Key + " не совпадает с исходным");
+					SetErrorStatus();
+				}
+				else
+				{
+					_errorsNum++;
+					_files[file.Key] = false;
+					Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Файл " + file.Key + " не найден");
+					SetErrorStatus();
+				}
 			}
 		}
 
@@ -142,27 +171,27 @@ namespace DriveErrorTest
 			_parentWindow.SetTestingStatusText("форматирование...");
 			if (!FormatDrive())
 			{
-				++_errorsNum;
-				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось форматировать устройство");
-				SetErrorStatus();
+				IncrementErrorCount();
 				return false;
 			}
 
 			_parentWindow.SetTestingStatusText("получение списка файлов...");
-			GetFilesFromSourceDirectory();
+			if (!GetFilesFromSourceDirectory())
+			{
+				IncrementErrorCount();
+				return false;
+			}
 
 			_parentWindow.SetTestingStatusText("запись данных...");
 			if (!WriteFilesToDrive())
 			{
-				++_errorsNum;
-				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось записать данные на устройство");
-				SetErrorStatus();
-				return false;
+				IncrementErrorCount();
+                return false;
 			}
 
 			_lastUpdateTime = DateTime.Now;
 			Utilities.LogEvent(_logFile, _lastUpdateTime, "Выполнена плановая перезапись данных, проведено циклов записи - " + ++_writeCycles);
-			_parentWindow.SetWryteCycles(_writeCycles);
+			_parentWindow.SetWriteCycles(_writeCycles);
 			SetErrorStatus();
 
 			return true;
@@ -196,10 +225,30 @@ namespace DriveErrorTest
 			{
 				return Utilities.FormatDriveWithCmd(_drive.Name.Substring(0,2), _drive.VolumeLabel);
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
-				_errorsNum++;
-				Utilities.LogEvent(_logFile, DateTime.Now,"Ошибка! Не удалось форматировать устройство");
+				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось форматировать устройство", ex.ToString());
+				return false;
+			}
+		}
+
+		private bool GetFilesFromSourceDirectory()
+		{
+			try
+			{
+				_files.Clear();
+				var filesFromSourceDirectory = Utilities.GetFilesInDirectory(_sourceDirectory);
+				foreach (var path in filesFromSourceDirectory)
+				{
+					var actualFilename = path.Substring(1, path.Length - 1);
+					_files.Add(actualFilename, true);
+				}
+
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Utilities.LogEvent(_logFile, DateTime.Now, "Не удалось получить список файлов в источнике", ex.ToString());
 				return false;
 			}
 		}
@@ -222,31 +271,9 @@ namespace DriveErrorTest
 
 				return true;
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
-				_errorsNum++;
-				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось записать файлы на диск");
-				return false;
-			}
-		}
-
-		private bool GetFilesFromSourceDirectory()
-		{
-			try
-			{
-				_files.Clear();
-				var filesFromSourceDirectory = Utilities.GetFilesInDirectory(_sourceDirectory);
-				foreach (var path in filesFromSourceDirectory)
-				{
-					var actualFilename = path.Substring(1, path.Length - 1);
-					_files.Add(actualFilename, true);
-				}
-
-				return true;
-			}
-			catch (Exception)
-			{
-				Utilities.LogEvent(_logFile, DateTime.Now, "Не удалось получить список файлов в источнике");
+				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось записать файлы на диск", ex.ToString());
 				return false;
 			}
 		}

@@ -38,6 +38,9 @@ namespace DriveErrorTest
 
 			CbTimePeriod.Items.Add("Раз в 10 минут");
 			CbTimePeriod.Items.Add("Раз в час");
+			CbTimePeriod.Items.Add("Раз в 3 часа");
+			CbTimePeriod.Items.Add("Раз в 6 часов");
+			CbTimePeriod.Items.Add("Раз в 12 часов");
 			CbTimePeriod.Items.Add("Раз в сутки");
 			CbTimePeriod.Items.Add("Раз в двое суток");
 			CbTimePeriod.Items.Add("Раз в трое суток");
@@ -59,20 +62,20 @@ namespace DriveErrorTest
 			{
 				Drives.Add(drive);
 				CbDrives.Items.Add(drive.Name + drive.VolumeLabel);
-				SetUIStatus(true);
+				SetGuiAccess(true);
 				BtLaunchTesting.IsEnabled = true;
 			}
 
-			if (CbDrives.Items.IsEmpty)
-			{
-				CbDrives.Items.Add("<Съемные диски не найдены>");
-				SetUIStatus(false);
-				BtLaunchTesting.IsEnabled = false;
-				BtShowLog.IsEnabled = false;
-			}
+			if (!CbDrives.Items.IsEmpty)
+				return;
+
+			 CbDrives.Items.Add("<Съемные диски не найдены>");
+			SetGuiAccess(false);
+			BtLaunchTesting.IsEnabled = false;
+			BtShowLog.IsEnabled = false;
 		}
 
-		private void SetUIStatus(bool active)
+		private void SetGuiAccess(bool active)
 		{
 			CbTimePeriod.IsEnabled = active;
 			CbDrives.IsEnabled = active;
@@ -85,11 +88,11 @@ namespace DriveErrorTest
 		{
 			var dg = new FolderBrowserDialog();
 
-			if (dg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-			{
-				_sourcePath = dg.SelectedPath;
-				LbInputPath.Content = _sourcePath;
-			}
+			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+				return;
+
+			_sourcePath = dg.SelectedPath;
+			LbInputPath.Content = _sourcePath;
 		}
 
 		private bool ReadyToTest()
@@ -133,10 +136,10 @@ namespace DriveErrorTest
 			_t = new Thread(CreateTester);
 			_t.Start();
 			Title = Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
-			SetUIStatus(false);
+			SetGuiAccess(false);
 			BtLaunchTesting.Content = "Остановить тестирование";
 			SetTestingStatusText("запущено");
-			SetUIStatus(false);
+			SetGuiAccess(false);
 		}
 
 		private void StopTest()
@@ -148,7 +151,7 @@ namespace DriveErrorTest
 			SetBackgroundColor(Color.FromRgb(255, 255, 255));
 			SetTaskbarStatus(TaskbarItemProgressState.None, 0);
 			SetCurrentFile(" ");
-			SetUIStatus(true);
+			SetGuiAccess(true);
 		}
 
 		public void BreakTestOnEmergency()
@@ -159,7 +162,7 @@ namespace DriveErrorTest
 			BtLaunchTesting.Content = "Запустить тестирование";
 			LbStatusStrip.Content = "аварийно остановлено";
 			SetBackgroundColor(Color.FromRgb(162, 0, 0));
-			SetUIStatus(true);
+			SetGuiAccess(true);
 		}
 
 		private void TerminateTestingThread()
@@ -179,7 +182,6 @@ namespace DriveErrorTest
 			}
 			catch (Exception)
 			{
-				
 			}
 		}
 
@@ -199,12 +201,30 @@ namespace DriveErrorTest
 			}
 			catch (Exception)
 			{
-				
 			}
 			
 		}
 
-		public void SetWryteCycles(int cycles)
+		public void SetReadCycles(ulong cycles)
+		{
+			try
+			{
+				if (Dispatcher.CheckAccess())
+				{
+					if (LbReadCyclesStrip.Dispatcher.CheckAccess())
+						LbReadCyclesStrip.Content = cycles;
+					else
+						LbReadCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetReadCycles), cycles);
+				}
+				else
+					Dispatcher.Invoke(new Action<ulong>(SetReadCycles), cycles);
+			}
+			catch (Exception)
+			{
+			}
+		}
+
+		public void SetWriteCycles(int cycles)
 		{
 			try
 			{
@@ -213,14 +233,13 @@ namespace DriveErrorTest
 					if (LbWriteCyclesStrip.Dispatcher.CheckAccess())
 						LbWriteCyclesStrip.Content = cycles;
 					else
-						LbWriteCyclesStrip.Dispatcher.Invoke(new Action<int>(SetWryteCycles), cycles);
+						LbWriteCyclesStrip.Dispatcher.Invoke(new Action<int>(SetWriteCycles), cycles);
 				}
 				else
-					Dispatcher.Invoke(new Action<int>(SetWryteCycles), cycles);
+					Dispatcher.Invoke(new Action<int>(SetWriteCycles), cycles);
 			}
 			catch (Exception)
 			{
-
 			}
 		}
 
@@ -243,7 +262,6 @@ namespace DriveErrorTest
 			}
 			catch (Exception)
 			{
-
 			}
 		}
 
@@ -261,9 +279,8 @@ namespace DriveErrorTest
 				else
 					Dispatcher.Invoke(new Action<string>(SetCurrentFile), filepath);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
-
 			}
 		}
 
@@ -288,15 +305,24 @@ namespace DriveErrorTest
 					span = TimeSpan.FromHours(1);
 					break;
 				case 2:
-					span = TimeSpan.FromDays(1);
+					span = TimeSpan.FromHours(3);
 					break;
 				case 3:
-					span = TimeSpan.FromDays(2);
+					span = TimeSpan.FromHours(6);
 					break;
 				case 4:
-					span = TimeSpan.FromDays(3);
+					span = TimeSpan.FromHours(12);
 					break;
 				case 5:
+					span = TimeSpan.FromDays(1);
+					break;
+				case 6:
+					span = TimeSpan.FromDays(2);
+					break;
+				case 7:
+					span = TimeSpan.FromDays(3);
+					break;
+				case 8:
 					span = TimeSpan.FromDays(7);
 					break;
 				default:
@@ -304,8 +330,10 @@ namespace DriveErrorTest
 					break;
 			}
 
-			_tester = new Tester(this, Drives[GetSelectedIndex(CbDrives)], _sourcePath, _logPath, span);
-			_tester.CleanStart = _cleanStart;
+			_tester = new Tester(this, Drives[GetSelectedIndex(CbDrives)], _sourcePath, _logPath, span)
+			{
+				CleanStart = _cleanStart
+			};
 			_tester.RunTest();
 		}
 
@@ -313,7 +341,7 @@ namespace DriveErrorTest
 		{
 			var dg = new OpenFileDialog
 			{
-				Filter = "Файлы Excel (*.xls,*.xlsx)|*.xls;*.xlsx|Текстовые файлы (*.txt)|*.txt|Все доступные форматы|*.txt;*.xls;*.xlsx"
+				Filter = "Файлы CSV (*.csv)|*.csv|Текстовые файлы (*.txt)|*.txt|Все доступные форматы|*.txt;*.csv"
 			};
 
 			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.Cancel)

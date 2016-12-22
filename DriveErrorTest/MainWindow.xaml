@@ -93,9 +93,13 @@
 			<Label Margin="3,0,0,0" Content="Состояние:"/>
 			<Label Name="LbStatusStrip" Margin="0,0,0,0"/>
 		</StackPanel>
-			<StackPanel Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal">
                 <Label Margin="3,0,0,0" Content="Циклов записи:"/>
                 <Label Name="LbWriteCyclesStrip" Margin="0,0,0,0"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Margin="3,0,0,0" Content="Проверено файлов:"/>
+                <Label Name="LbReadCyclesStrip" Margin="0,0,0,0"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <Label Margin="3,0,0,0" Content="Текущий файл:"/>
