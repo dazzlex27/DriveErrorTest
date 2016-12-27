@@ -103,15 +103,6 @@ namespace DriveErrorTest
 			return true;
 		}
 
-		public static void WriteToTxtFile(string filepath, string message)
-		{
-			using (var sw = new StreamWriter(filepath, true))
-			{
-				sw.WriteLine(message);
-				sw.Close();
-			}
-		}
-
 		public static List<string> GetFilesInDirectory(DirectoryInfo directory)
 		{
 			var result = new List<string>();
@@ -130,42 +121,6 @@ namespace DriveErrorTest
 			}
 
 			return result;
-		}
-
-		public static void WriteToCsv(string filepath, DateTime timestamp, string message, string exceptionText)
-		{
-			try
-			{
-				var delimiter = ';';
-				var result = Environment.NewLine + timestamp.ToShortDateString() + delimiter + timestamp.ToLongTimeString() + delimiter + message +
-							 (exceptionText == ""
-								 ? ""
-								 : delimiter + exceptionText);
-				File.AppendAllText(filepath, result, Encoding.Default);
-			}
-			catch (Exception)
-			{
-			}
-		}
-
-		public static void LogEvent(FileInfo logpath, DateTime timestamp, string message, string exceptionText = "")
-		{
-			if (!logpath.Exists)
-				File.Create(logpath.FullName);
-
-			switch (logpath.Extension)
-			{
-				case ".txt":
-					var timestampString = timestamp.ToShortDateString() + " " + timestamp.ToLongTimeString();
-					WriteToTxtFile(logpath.FullName,
-						timestampString + " " + message + " Текст ошибки: " + exceptionText);
-					break;
-				case ".csv":
-					WriteToCsv(logpath.FullName, timestamp, message, exceptionText);
-					break;
-				default:
-					throw new Exception("Неподдерживаемый формат лог файла!");
-			}
 		}
 	}
 }

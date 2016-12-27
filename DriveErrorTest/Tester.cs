@@ -10,35 +10,97 @@ namespace DriveErrorTest
 {
 	internal class Tester
 	{
+		public event Action<int> OnErrorCountChanged;
+		public event Action<ulong> OnReadCyclesCountChanged;
+		public event Action<ulong> OnWriteCyclesCountChanged;
+		public event Action<string> OnTestingStatusChanged;
+		public event Action<string> OnCurrentFileChanged;
 		private readonly DriveInfo _drive;
 		private readonly DirectoryInfo _sourceDirectory;
 		private readonly TimeSpan _updatePeriod;
 		private DateTime _lastUpdateTime;
-		private readonly MainWindow _parentWindow;
-		private int _errorsNum;
-		private readonly Dictionary<string, bool> _files = new Dictionary<string, bool>();
-		private readonly FileInfo _logFile;
-		private ulong _readCycles;
-		private int _writeCycles;
+		private readonly Dictionary<string, bool> _files;// = new Dictionary<string, bool>();
+		private readonly Logger _logger;
+		private ulong _readCyclesCount;
+		private int _writeCyclesCount;
+		private int _errorsCount;
 
 		public bool IsRunning { get; private set; }
 
 		public bool CleanStart { get; set; }
 
-		public Tester(MainWindow parentWindow, DriveInfo drive, string dataPath, string logPath, TimeSpan updatePeriod)
+		public int ErrorsCount
 		{
-            _parentWindow = parentWindow;
+			get { return _errorsCount; }
+			private set
+			{
+				_errorsCount = value;
+				OnErrorCountChanged?.Invoke(++_errorsCount);
+				if (_errorsCount == 100)
+					BreakTestOnEmergency();
+			}
+		}
+
+		public ulong ReadCyclesCount
+		{
+			get { return _readCyclesCount; }
+			private set
+			{
+				_readCyclesCount = value;
+				OnReadCyclesCountChanged?.Invoke(++_readCyclesCount);
+			}
+		}
+
+		public int WriteCyclesCount
+		{
+			get { return _writeCyclesCount; }
+			private set
+			{
+				_writeCyclesCount = value;
+				OnWriteCyclesCountChanged?.Invoke(++_readCyclesCount);
+			}
+		}
+
+		private int IncrementErrorCount()
+		{
+			return ++ErrorsCount;
+		}
+
+		private ulong IncrementReadCycles()
+		{
+			return ++ReadCyclesCount;
+		}
+
+		private int IncrementWriteCycles()
+		{
+			return ++WriteCyclesCount;
+		}
+
+		private void SetCurrentFile(string currentFile)
+		{
+			OnCurrentFileChanged?.Invoke(currentFile);
+		}
+
+		private void SetTestingStatus(string status)
+		{
+			OnTestingStatusChanged?.Invoke(status);
+		}
+
+		public Tester(Logger logger, DriveInfo drive, string dataPath, TimeSpan updatePeriod)
+		{
 			_drive = drive;
 			_sourceDirectory = new DirectoryInfo(dataPath);
-			_logFile = new FileInfo(logPath);
+			_files = new Dictionary<string, bool>();
+			_logger = logger;
+
 			_updatePeriod = updatePeriod;
-			_errorsNum = 0;
+			ErrorsCount = 0;
 		}
 
 		public void RunTest()
 		{
 			IsRunning = true;
-			Utilities.LogEvent(_logFile, DateTime.Now, "Тестирование запущено");
+			_logger.LogInfo(DateTime.Now, "Тестирование запущено");
 
 			if (CleanStart)
 			{
@@ -54,19 +116,16 @@ namespace DriveErrorTest
 			{
 				if (DateTime.Now - _lastUpdateTime > _updatePeriod)
 				{
-					Utilities.LogEvent(_logFile, DateTime.Now, "Цикл чтения окончен. Всего итераций чтения - " + _readCycles);
+					_logger.LogInfo(DateTime.Now, "Цикл чтения окончен. Всего итераций чтения - " + ReadCyclesCount);
 					do { } while (!LoadFilesToDrive() && IsRunning);
 				}
 
 				RunCheckCycle();
-				SetErrorStatus();
 			}
 
-			_parentWindow.SetCurrentFile("");
-			_parentWindow.SetBackgroundColor(Color.FromRgb(255, 255, 255));
-			_parentWindow.SetTaskbarStatus(TaskbarItemProgressState.None, 0);
-			Utilities.LogEvent(_logFile, DateTime.Now, "Тестирование прервано");
-			_parentWindow.SetTestingStatusText("остановлено");
+			SetCurrentFile("");
+			_logger.LogInfo(DateTime.Now, "Тестирование прервано");
+			SetTestingStatus("остановлено");
 		}
 
 		public void StopTest()
@@ -74,10 +133,10 @@ namespace DriveErrorTest
 			IsRunning = false;
 		}
 
-		private void IncrementErrorCount()
+		private void BreakTestOnEmergency()
 		{
-			++_errorsNum;
-			SetErrorStatus();
+			StopTest();
+			_logger.LogInfo(DateTime.Now, "Тестирование аварийно завершено. Число ошибок превысило 100");
 		}
 
 		private void RunCheckCycle()
@@ -91,16 +150,15 @@ namespace DriveErrorTest
 			catch (Exception ex)
 			{
 				IncrementErrorCount();
-				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось построить список файлов на устройстве", ex.ToString());
+				_logger.LogException(DateTime.Now, "Не удалось построить список файлов на устройстве", ex.ToString());
 				return;
 			}
 			
 			if (filesFromDrive.Count != _files.Count)
 			{
 				IncrementErrorCount();
-				Utilities.LogEvent(_logFile,
-					DateTime.Now,
-					"Ошибка! Количество файлов не совпадает. Ожидалось - " + _files.Count + ", посчитано - " + filesFromDrive.Count);
+				_logger.LogError(DateTime.Now,
+					"Количество файлов не совпадает. Ожидалось - " + _files.Count + ", посчитано - " + filesFromDrive.Count);
 			}
 
 			try
@@ -110,22 +168,22 @@ namespace DriveErrorTest
 			catch (Exception ex)
 			{
 				IncrementErrorCount();
-				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось выполнить чтение с устройства", ex.ToString());
+				_logger.LogException(DateTime.Now, "Не удалось выполнить чтение с устройства", ex.ToString());
 			}
 			finally
 			{
 
-				_parentWindow.SetCurrentFile("");
+				SetCurrentFile("");
 
 				Thread.Sleep(10);
 			}
 		}
 
-		private void CompareAllFiles(List<string> filesFromDrive)
+		private void CompareAllFiles(IList<string> filesFromDrive)
 		{
 			foreach (var file in _files.Where(file => file.Value))
 			{
-				_parentWindow.SetCurrentFile(file.Key);
+				SetCurrentFile(file.Key);
 				var index = filesFromDrive.IndexOf(file.Key);
 				if (index > -1)
 				{
@@ -138,96 +196,71 @@ namespace DriveErrorTest
 					}
 					catch (Exception ex)
 					{
-						_errorsNum++;
+						IncrementErrorCount();
 						_files[file.Key] = false;
-						Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось сравнить версии файла " + file.Key, ex.ToString());
+						_logger.LogException(DateTime.Now, "Не удалось сравнить версии файла " + file.Key, ex.ToString());
 						continue;
 					}
 					finally
 					{
-						_parentWindow.SetReadCycles(++_readCycles);
+						IncrementReadCycles();
 					}
 
 					if (identical)
 						continue;
 
-					_errorsNum++;
+					IncrementErrorCount();
 					_files[file.Key] = false;
-					Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Файл " + file.Key + " не совпадает с исходным");
-					SetErrorStatus();
+					_logger.LogError(DateTime.Now, "Файл " + file.Key + " не совпадает с исходным");
 				}
 				else
 				{
-					_errorsNum++;
+					IncrementErrorCount();
 					_files[file.Key] = false;
-					Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Файл " + file.Key + " не найден");
-					SetErrorStatus();
+					_logger.LogError(DateTime.Now, "Файл " + file.Key + " не найден");
 				}
 			}
 		}
 
 		private bool LoadFilesToDrive()
 		{
-			_parentWindow.SetTestingStatusText("форматирование...");
+			SetTestingStatus("форматирование...");
 			if (!FormatDrive())
 			{
 				IncrementErrorCount();
 				return false;
 			}
 
-			_parentWindow.SetTestingStatusText("получение списка файлов...");
+			SetTestingStatus("получение списка файлов...");
 			if (!GetFilesFromSourceDirectory())
 			{
 				IncrementErrorCount();
 				return false;
 			}
 
-			_parentWindow.SetTestingStatusText("запись данных...");
+			SetTestingStatus("запись данных...");
 			if (!WriteFilesToDrive())
 			{
 				IncrementErrorCount();
-                return false;
+				return false;
 			}
 
 			_lastUpdateTime = DateTime.Now;
-			Utilities.LogEvent(_logFile, _lastUpdateTime, "Выполнена плановая перезапись данных, проведено циклов записи - " + ++_writeCycles);
-			_parentWindow.SetWriteCycles(_writeCycles);
-			SetErrorStatus();
+			_logger.LogInfo(_lastUpdateTime,
+				"Выполнена плановая перезапись данных, проведено циклов записи - " + IncrementWriteCycles());
 
 			return true;
-		}
-
-		private void SetErrorStatus()
-		{
-			if (_errorsNum == 0)
-			{
-				_parentWindow.SetTestingStatusText("ошибок не найдено");
-				_parentWindow.SetBackgroundColor(Color.FromRgb(191, 235, 171));
-				_parentWindow.SetTaskbarStatus(TaskbarItemProgressState.Normal, 1);
-			}
-			else
-			{
-				if (_errorsNum >= 100)
-				{
-					_parentWindow.BreakTestOnEmergency();
-					return;
-				}
-
-				_parentWindow.SetTestingStatusText("обнаружено " + _errorsNum + " ошибок");
-				_parentWindow.SetBackgroundColor(Color.FromRgb(245, 105, 105));
-				_parentWindow.SetTaskbarStatus(TaskbarItemProgressState.Error, 1);
-			}
 		}
 
 		private bool FormatDrive()
 		{
 			try
 			{
-				return Utilities.FormatDriveWithCmd(_drive.Name.Substring(0,2), _drive.VolumeLabel);
+				return Utilities.FormatDriveWithCmd(_drive.Name.Substring(0, 2), _drive.VolumeLabel);
 			}
 			catch (Exception ex)
 			{
-				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось форматировать устройство", ex.ToString());
+				_logger.LogException(DateTime.Now, "Не удалось форматировать устройство", ex.ToString());
 				return false;
 			}
 		}
@@ -248,7 +281,7 @@ namespace DriveErrorTest
 			}
 			catch (Exception ex)
 			{
-				Utilities.LogEvent(_logFile, DateTime.Now, "Не удалось получить список файлов в источнике", ex.ToString());
+				_logger.LogException(DateTime.Now, "Не удалось получить список файлов в источнике", ex.ToString());
 				return false;
 			}
 		}
@@ -273,7 +306,7 @@ namespace DriveErrorTest
 			}
 			catch (Exception ex)
 			{
-				Utilities.LogEvent(_logFile, DateTime.Now, "Ошибка! Не удалось записать файлы на диск", ex.ToString());
+				_logger.LogException(DateTime.Now, "Ошибка! Не удалось записать файлы на диск", ex.ToString());
 				return false;
 			}
 		}

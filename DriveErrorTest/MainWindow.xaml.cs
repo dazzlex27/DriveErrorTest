@@ -20,7 +20,6 @@ namespace DriveErrorTest
 		private string _logPath = "";
 		private Thread _t;
 		private Tester _tester;
-		private bool _cleanStart;
 
 		public MainWindow()
 		{
@@ -144,24 +143,14 @@ namespace DriveErrorTest
 
 		private void StopTest()
 		{
+			UnsubscribeFromTesterEvents();
 			_tester.StopTest();
-			do { } while (_tester.IsRunning); 
-			BtLaunchTesting.Content = "Запустить тестирование";
+			do { } while (_tester.IsRunning);
+			BtLaunchTesting.Content = "Начать тестирование";
 			SetTestingStatusText("остановлено");
 			SetBackgroundColor(Color.FromRgb(255, 255, 255));
 			SetTaskbarStatus(TaskbarItemProgressState.None, 0);
-			SetCurrentFile(" ");
-			SetGuiAccess(true);
-		}
-
-		public void BreakTestOnEmergency()
-		{
-			_tester.StopTest();
-			TerminateTestingThread();
-			Utilities.LogEvent(new FileInfo(_logPath),DateTime.Now,"Тестирование аварийно завершено. Число ошибок превысило 100");
-			BtLaunchTesting.Content = "Запустить тестирование";
-			LbStatusStrip.Content = "аварийно остановлено";
-			SetBackgroundColor(Color.FromRgb(162, 0, 0));
+			SetCurrentFileText(" ");
 			SetGuiAccess(true);
 		}
 
@@ -173,123 +162,38 @@ namespace DriveErrorTest
 
 		public void SetBackgroundColor(Color color)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-					Background = new SolidColorBrush(color);
-				else
-					Dispatcher.Invoke(new Action<Color>(SetBackgroundColor), color);
-			}
-			catch (Exception)
-			{
-			}
+			Background = new SolidColorBrush(color);
 		}
 
 		public void SetTestingStatusText(string message)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (LbStatusStrip.Dispatcher.CheckAccess())
-						LbStatusStrip.Content = message;
-					else
-						LbStatusStrip.Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
-				}
-				else
-					Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
-			}
-			catch (Exception)
-			{
-			}
-			
+			LbStatusStrip.Content = message;
 		}
 
-		public void SetReadCycles(ulong cycles)
+		public void SetReadCyclesCountText(ulong cycles)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (LbReadCyclesStrip.Dispatcher.CheckAccess())
-						LbReadCyclesStrip.Content = cycles;
-					else
-						LbReadCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetReadCycles), cycles);
-				}
-				else
-					Dispatcher.Invoke(new Action<ulong>(SetReadCycles), cycles);
-			}
-			catch (Exception)
-			{
-			}
+			LbReadCyclesStrip.Content = cycles;
 		}
 
-		public void SetWriteCycles(int cycles)
+		public void SetWriteCyclesCountText(ulong cycles)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (LbWriteCyclesStrip.Dispatcher.CheckAccess())
-						LbWriteCyclesStrip.Content = cycles;
-					else
-						LbWriteCyclesStrip.Dispatcher.Invoke(new Action<int>(SetWriteCycles), cycles);
-				}
-				else
-					Dispatcher.Invoke(new Action<int>(SetWriteCycles), cycles);
-			}
-			catch (Exception)
-			{
-			}
+			LbWriteCyclesStrip.Content = cycles;
 		}
 
 		public void SetTaskbarStatus(TaskbarItemProgressState state, double value)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (TaskbarItemInfo.Dispatcher.CheckAccess())
-					{
-						TaskbarItemInfo.ProgressState = state;
-						TaskbarItemInfo.ProgressValue = value;
-					}
-					else
-						LbWriteCyclesStrip.Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
-				}
-				else
-					Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
-			}
-			catch (Exception)
-			{
-			}
+			TaskbarItemInfo.ProgressState = state;
+			TaskbarItemInfo.ProgressValue = value;
 		}
 
-		public void SetCurrentFile(string filepath)
+		public void SetCurrentFileText(string filepath)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (LbCurrFileStrip.Dispatcher.CheckAccess())
-						LbCurrFileStrip.Content = filepath;
-					else
-						LbCurrFileStrip.Dispatcher.Invoke(new Action<string>(SetCurrentFile), filepath);
-				}
-				else
-					Dispatcher.Invoke(new Action<string>(SetCurrentFile), filepath);
-			}
-			catch (Exception)
-			{
-			}
+			LbCurrFileStrip.Content = filepath;
 		}
 
 		public static int GetSelectedIndex(System.Windows.Controls.ComboBox combobox)
 		{
-			if (combobox.Dispatcher.CheckAccess())
-				return combobox.SelectedIndex;
-
-			return (int) combobox.Dispatcher.Invoke(new Func<System.Windows.Controls.ComboBox, int>(GetSelectedIndex), combobox);
+			return combobox.SelectedIndex;
 		}
 
 		private void CreateTester()
@@ -330,11 +234,83 @@ namespace DriveErrorTest
 					break;
 			}
 
-			_tester = new Tester(this, Drives[GetSelectedIndex(CbDrives)], _sourcePath, _logPath, span)
+			_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, span)
 			{
-				CleanStart = _cleanStart
+				CleanStart = CbCleanStart.IsChecked == true
 			};
+
+			SubscribeToTesterEvents();
+
 			_tester.RunTest();
+		}
+
+		private void SubscribeToTesterEvents()
+		{
+			if (_tester == null)
+				return;
+
+			_tester.OnErrorCountChanged += OnErrorCountChangedEventHandler;
+			_tester.OnCurrentFileChanged += OnCurrentFileChangedEventHandler;
+			_tester.OnReadCyclesCountChanged += OnReadCyclesCountChangedEventHandler;
+			_tester.OnWriteCyclesCountChanged += OnWriteCyclesCountChangedEventHandler;
+			_tester.OnTestingStatusChanged += OnTestingStatusChangedEventHandler;
+		}
+
+		private void UnsubscribeFromTesterEvents()
+		{
+			if (_tester == null)
+				return;
+
+			_tester.OnErrorCountChanged -= OnErrorCountChangedEventHandler;
+			_tester.OnCurrentFileChanged -= OnCurrentFileChangedEventHandler;
+			_tester.OnReadCyclesCountChanged -= OnReadCyclesCountChangedEventHandler;
+			_tester.OnWriteCyclesCountChanged -= OnWriteCyclesCountChangedEventHandler;
+			_tester.OnTestingStatusChanged -= OnTestingStatusChangedEventHandler;
+		}
+
+		private void OnTestingStatusChangedEventHandler(string statusText)
+		{
+			SetTestingStatusText(statusText);
+		}
+
+		private void OnWriteCyclesCountChangedEventHandler(ulong cyclesCount)
+		{
+			SetWriteCyclesCountText(cyclesCount);
+		}
+
+		private void OnReadCyclesCountChangedEventHandler(ulong cyclesCount)
+		{
+			SetReadCyclesCountText(cyclesCount);
+		}
+
+		private void OnCurrentFileChangedEventHandler(string filename)
+		{
+			SetCurrentFileText(filename);
+		}
+
+		private void OnErrorCountChangedEventHandler(int errorsCount)
+		{
+			if (errorsCount == 0)
+			{
+				SetTestingStatusText("ошибок не найдено...");
+				SetBackgroundColor(Color.FromRgb(191, 235, 171));
+				SetTaskbarStatus(TaskbarItemProgressState.Normal, 1);
+			}
+			else
+			{
+				if (errorsCount >= 100)
+				{
+					BtLaunchTesting.Content = "Запустить тестирование";
+					LbStatusStrip.Content = "аварийно остановлено";
+					SetBackgroundColor(Color.FromRgb(162, 0, 0));
+					SetGuiAccess(true);
+					return;
+				}
+
+				SetTestingStatusText($"обнаружено {_tester.ErrorsCount} ошибок");
+				SetBackgroundColor(Color.FromRgb(245, 105, 105));
+				SetTaskbarStatus(TaskbarItemProgressState.Error, 1);
+			}
 		}
 
 		private void BtSelectLogPath_OnClick(object sender, RoutedEventArgs e)
@@ -344,12 +320,12 @@ namespace DriveErrorTest
 				Filter = "Файлы CSV (*.csv)|*.csv|Текстовые файлы (*.txt)|*.txt|Все доступные форматы|*.txt;*.csv"
 			};
 
-			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.Cancel)
-			{
-				_logPath = dg.FileName;
-				LbLogPath.Content = _logPath;
-				BtShowLog.IsEnabled = true;
-			}
+			if (dg.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
+				return;
+
+			_logPath = dg.FileName;
+			LbLogPath.Content = _logPath;
+			BtShowLog.IsEnabled = true;
 		}
 
 		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
@@ -378,16 +354,6 @@ namespace DriveErrorTest
 			}
 
 			Environment.Exit(0);
-		}
-
-		private void ToggleButton_OnChecked(object sender, RoutedEventArgs e)
-		{
-			_cleanStart = true;
-		}
-
-		private void ToggleButton_OnUnchecked(object sender, RoutedEventArgs e)
-		{
-			_cleanStart = false;
 		}
 	}
 }
