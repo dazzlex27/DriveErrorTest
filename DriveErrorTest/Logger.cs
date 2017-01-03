@@ -48,10 +48,10 @@ namespace DriveErrorTest
 					eventString = "Информация";
 					break;
 					case EventType.Error:
-					eventString = "Ошибка";
+					eventString = "Ошибка!";
 					break;
 					case EventType.Exception:
-					eventString = "Исключительная ситуация";
+					eventString = "Исключительная ситуация!";
 					break;
 				default:
 					eventString = "";

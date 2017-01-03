@@ -2,8 +2,6 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Media;
-using System.Windows.Shell;
 using System.Threading;
 
 namespace DriveErrorTest
@@ -19,10 +17,10 @@ namespace DriveErrorTest
 		private readonly DirectoryInfo _sourceDirectory;
 		private readonly TimeSpan _updatePeriod;
 		private DateTime _lastUpdateTime;
-		private readonly Dictionary<string, bool> _files;// = new Dictionary<string, bool>();
+		private readonly Dictionary<string, bool> _files;
 		private readonly Logger _logger;
 		private ulong _readCyclesCount;
-		private int _writeCyclesCount;
+		private ulong _writeCyclesCount;
 		private int _errorsCount;
 
 		public bool IsRunning { get; private set; }
@@ -35,7 +33,7 @@ namespace DriveErrorTest
 			private set
 			{
 				_errorsCount = value;
-				OnErrorCountChanged?.Invoke(++_errorsCount);
+				OnErrorCountChanged?.Invoke(_errorsCount);
 				if (_errorsCount == 100)
 					BreakTestOnEmergency();
 			}
@@ -47,17 +45,17 @@ namespace DriveErrorTest
 			private set
 			{
 				_readCyclesCount = value;
-				OnReadCyclesCountChanged?.Invoke(++_readCyclesCount);
+				OnReadCyclesCountChanged?.Invoke(_readCyclesCount);
 			}
 		}
 
-		public int WriteCyclesCount
+		public ulong WriteCyclesCount
 		{
 			get { return _writeCyclesCount; }
 			private set
 			{
 				_writeCyclesCount = value;
-				OnWriteCyclesCountChanged?.Invoke(++_readCyclesCount);
+				OnWriteCyclesCountChanged?.Invoke(_writeCyclesCount);
 			}
 		}
 
@@ -71,7 +69,7 @@ namespace DriveErrorTest
 			return ++ReadCyclesCount;
 		}
 
-		private int IncrementWriteCycles()
+		private ulong IncrementWriteCycles()
 		{
 			return ++WriteCyclesCount;
 		}
@@ -102,25 +100,45 @@ namespace DriveErrorTest
 			IsRunning = true;
 			_logger.LogInfo(DateTime.Now, "Тестирование запущено");
 
-			if (CleanStart)
+			try
 			{
-				do { } while (!LoadFilesToDrive() && IsRunning);
-			}
-			else
-			{
-				GetFilesFromSourceDirectory();
-				_lastUpdateTime = DateTime.Now;
-			}
 
-			while (IsRunning)
-			{
-				if (DateTime.Now - _lastUpdateTime > _updatePeriod)
+				if (CleanStart)
 				{
-					_logger.LogInfo(DateTime.Now, "Цикл чтения окончен. Всего итераций чтения - " + ReadCyclesCount);
-					do { } while (!LoadFilesToDrive() && IsRunning);
+					do
+					{
+					} while (!LoadFilesToDrive() && IsRunning);
+				}
+				else
+				{
+					GetFilesFromSourceDirectory();
+					_lastUpdateTime = DateTime.Now;
 				}
 
-				RunCheckCycle();
+				ErrorsCount = 0;
+
+				while (IsRunning)
+				{
+					if (DateTime.Now - _lastUpdateTime > _updatePeriod)
+					{
+						_logger.LogInfo(DateTime.Now, "Цикл чтения окончен. Всего итераций чтения - " + ReadCyclesCount);
+						do
+						{
+						} while (!LoadFilesToDrive() && IsRunning);
+					}
+
+					RunCheckCycle();
+				}
+			}
+			catch (DriveNotFoundException ex)
+			{
+				IncrementErrorCount();
+				_logger.LogException(DateTime.Now, "Устройство не найдено", ex.ToString());
+			}
+			catch (Exception ex)
+			{
+				IncrementErrorCount();
+				_logger.LogException(DateTime.Now, "Во время выполнения возникло исключение", ex.ToString());
 			}
 
 			SetCurrentFile("");
@@ -136,7 +154,7 @@ namespace DriveErrorTest
 		private void BreakTestOnEmergency()
 		{
 			StopTest();
-			_logger.LogInfo(DateTime.Now, "Тестирование аварийно завершено. Число ошибок превысило 100");
+			_logger.LogInfo(DateTime.Now, "Тестирование аварийно завершено");
 		}
 
 		private void RunCheckCycle()
@@ -181,7 +199,7 @@ namespace DriveErrorTest
 
 		private void CompareAllFiles(IList<string> filesFromDrive)
 		{
-			foreach (var file in _files.Where(file => file.Value))
+			foreach (var file in _files.ToArray().Where(file => file.Value))
 			{
 				SetCurrentFile(file.Key);
 				var index = filesFromDrive.IndexOf(file.Key);
@@ -239,6 +257,12 @@ namespace DriveErrorTest
 			}
 
 			SetTestingStatus("запись данных...");
+			if (_drive.RootDirectory.GetDirectories().Count() > 1)
+			{
+				_logger.LogError(DateTime.Now, "Устройство не отформатировано");
+				return false;
+			}
+
 			if (!WriteFilesToDrive())
 			{
 				IncrementErrorCount();

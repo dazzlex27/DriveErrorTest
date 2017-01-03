@@ -76,11 +76,16 @@ namespace DriveErrorTest
 
 		private void SetGuiAccess(bool active)
 		{
-			CbTimePeriod.IsEnabled = active;
-			CbDrives.IsEnabled = active;
-			BtSelectSourcePath.IsEnabled = active;
-			BtSelectLogPath.IsEnabled = active;
-			CbCleanStart.IsEnabled = active;
+			if (Dispatcher.CheckAccess())
+			{
+				CbTimePeriod.Dispatcher.Invoke(new Action(() => CbTimePeriod.IsEnabled = active));
+				CbDrives.Dispatcher.Invoke(new Action(() => CbDrives.IsEnabled = active));
+				BtSelectSourcePath.Dispatcher.Invoke(new Action(() => BtSelectSourcePath.IsEnabled = active));
+				BtSelectLogPath.Dispatcher.Invoke(new Action(() => BtSelectLogPath.IsEnabled = active));
+				CbCleanStart.Dispatcher.Invoke(new Action(() => CbCleanStart.IsEnabled = active));
+			}
+			else
+				Dispatcher.Invoke(new Action<bool>(SetGuiAccess), active);
 		}
 
 		private void BtSelectTestData_OnClick(object sender, RoutedEventArgs e)
@@ -132,13 +137,22 @@ namespace DriveErrorTest
 
 		private void StartTest()
 		{
-			_t = new Thread(CreateTester);
-			_t.Start();
-			Title = Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
-			SetGuiAccess(false);
-			BtLaunchTesting.Content = "Остановить тестирование";
-			SetTestingStatusText("запущено");
-			SetGuiAccess(false);
+			try
+			{
+				Title = Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
+				_t = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
+				_t.Start();
+				SetGuiAccess(false);
+				SetStartStopButtonLabel(false);
+				SetTestingStatusText("запущено");
+				SetGuiAccess(false);
+			}
+			catch (Exception)
+			{
+				System.Windows.MessageBox.Show(
+					"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства и файла журнала",
+					"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+			}
 		}
 
 		private void StopTest()
@@ -162,45 +176,163 @@ namespace DriveErrorTest
 
 		public void SetBackgroundColor(Color color)
 		{
-			Background = new SolidColorBrush(color);
+			try
+			{
+				if (Dispatcher.CheckAccess())
+					Background = new SolidColorBrush(color);
+				else
+					Dispatcher.Invoke(new Action<Color>(SetBackgroundColor), color);
+			}
+			catch (Exception)
+			{
+			}
 		}
 
-		public void SetTestingStatusText(string message)
+		private void SetTestingStatusText(string message)
 		{
-			LbStatusStrip.Content = message;
+			try
+			{
+				if (Dispatcher.CheckAccess())
+				{
+					if (LbStatusStrip.Dispatcher.CheckAccess())
+						LbStatusStrip.Content = message;
+					else
+						LbStatusStrip.Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
+				}
+				else
+					Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
+			}
+			catch (Exception)
+			{
+			}
 		}
 
-		public void SetReadCyclesCountText(ulong cycles)
+		private void SetReadCyclesCountText(ulong cycles)
 		{
-			LbReadCyclesStrip.Content = cycles;
+			try
+			{
+				if (Dispatcher.CheckAccess())
+				{
+					if (LbReadCyclesStrip.Dispatcher.CheckAccess())
+						LbReadCyclesStrip.Content = cycles;
+					else
+						LbReadCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetReadCyclesCountText), cycles);
+				}
+				else
+					Dispatcher.Invoke(new Action<ulong>(SetReadCyclesCountText), cycles);
+			}
+			catch (Exception)
+			{
+			}
 		}
 
-		public void SetWriteCyclesCountText(ulong cycles)
+		private void SetWriteCyclesCountText(ulong cycles)
 		{
-			LbWriteCyclesStrip.Content = cycles;
+			try
+			{
+				if (Dispatcher.CheckAccess())
+				{
+					if (LbWriteCyclesStrip.Dispatcher.CheckAccess())
+						LbWriteCyclesStrip.Content = cycles;
+					else
+						LbWriteCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetWriteCyclesCountText), cycles);
+				}
+				else
+					Dispatcher.Invoke(new Action<ulong>(SetWriteCyclesCountText), cycles);
+			}
+			catch (Exception)
+			{
+			}
 		}
 
-		public void SetTaskbarStatus(TaskbarItemProgressState state, double value)
+		private void SetTaskbarStatus(TaskbarItemProgressState state, double value)
 		{
-			TaskbarItemInfo.ProgressState = state;
-			TaskbarItemInfo.ProgressValue = value;
+			try
+			{
+				if (Dispatcher.CheckAccess())
+				{
+					if (TaskbarItemInfo.Dispatcher.CheckAccess())
+					{
+						TaskbarItemInfo.ProgressState = state;
+						TaskbarItemInfo.ProgressValue = value;
+					}
+					else
+						LbWriteCyclesStrip.Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
+				}
+				else
+					Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
+			}
+			catch (Exception)
+			{
+			}
 		}
 
-		public void SetCurrentFileText(string filepath)
+		private void SetCurrentFileText(string filepath)
 		{
-			LbCurrFileStrip.Content = filepath;
+			try
+			{
+				if (Dispatcher.CheckAccess())
+				{
+					if (LbCurrFileStrip.Dispatcher.CheckAccess())
+						LbCurrFileStrip.Content = filepath;
+					else
+						LbCurrFileStrip.Dispatcher.Invoke(new Action<string>(SetCurrentFileText), filepath);
+				}
+				else
+					Dispatcher.Invoke(new Action<string>(SetCurrentFileText), filepath);
+			}
+			catch (Exception)
+			{
+			}
+		}
+
+		private void SetStartStopButtonLabel(bool start)
+		{
+			try
+			{
+				if (Dispatcher.CheckAccess())
+				{
+					if (BtLaunchTesting.Dispatcher.CheckAccess())
+					{
+						if (start)
+						BtLaunchTesting.Content = "Запустить тестирование";
+						else
+							BtLaunchTesting.Content = "Остановить тестирование";
+						
+					}
+					else
+						LbCurrFileStrip.Dispatcher.Invoke(new Action<bool>(SetStartStopButtonLabel), start);
+				}
+				else
+					Dispatcher.Invoke(new Action<bool>(SetStartStopButtonLabel), start);
+			}
+			catch (Exception)
+			{
+			}
 		}
 
 		public static int GetSelectedIndex(System.Windows.Controls.ComboBox combobox)
 		{
-			return combobox.SelectedIndex;
+			if (combobox.Dispatcher.CheckAccess())
+				return combobox.SelectedIndex;
+
+			return (int)combobox.Dispatcher.Invoke(new Func<System.Windows.Controls.ComboBox, int>(GetSelectedIndex), combobox);
 		}
 
-		private void CreateTester()
+		public static bool? GetCheckBoxValue(System.Windows.Controls.CheckBox checkBox)
+		{
+			if (checkBox.Dispatcher.CheckAccess())
+				return checkBox.IsChecked;
+
+			return
+				(bool?) checkBox.Dispatcher.Invoke(new Func<System.Windows.Controls.CheckBox, bool?>(GetCheckBoxValue), checkBox);
+		}
+
+		private void CreateTester(int periodValue, bool cleanStart)
 		{
 			TimeSpan span;
 
-			switch (GetSelectedIndex(CbTimePeriod))
+			switch (periodValue)
 			{
 				case 0:
 					span = TimeSpan.FromMinutes(10);
@@ -234,9 +366,10 @@ namespace DriveErrorTest
 					break;
 			}
 
-			_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, span)
+			//_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, span)
+			_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, TimeSpan.FromMinutes(1))
 			{
-				CleanStart = CbCleanStart.IsChecked == true
+				CleanStart = cleanStart
 			};
 
 			SubscribeToTesterEvents();
@@ -300,8 +433,7 @@ namespace DriveErrorTest
 			{
 				if (errorsCount >= 100)
 				{
-					BtLaunchTesting.Content = "Запустить тестирование";
-					LbStatusStrip.Content = "аварийно остановлено";
+					SetStartStopButtonLabel(true);
 					SetBackgroundColor(Color.FromRgb(162, 0, 0));
 					SetGuiAccess(true);
 					return;
@@ -317,7 +449,7 @@ namespace DriveErrorTest
 		{
 			var dg = new OpenFileDialog
 			{
-				Filter = "Файлы CSV (*.csv)|*.csv|Текстовые файлы (*.txt)|*.txt|Все доступные форматы|*.txt;*.csv"
+				Filter = "Текстовые файлы (*.txt)|*.txt|Файлы CSV (*.csv)|*.csv|Все доступные форматы|*.txt;*.csv"
 			};
 
 			if (dg.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
