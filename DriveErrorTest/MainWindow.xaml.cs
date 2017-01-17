@@ -366,8 +366,7 @@ namespace DriveErrorTest
 					break;
 			}
 
-			//_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, span)
-			_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, TimeSpan.FromMinutes(1))
+			_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, span)
 			{
 				CleanStart = cleanStart
 			};

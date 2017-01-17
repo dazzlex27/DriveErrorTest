@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Permissions;
-using System.Text;
 
 namespace DriveErrorTest
 {
@@ -12,27 +10,22 @@ namespace DriveErrorTest
 	{
 		public static bool FormatDriveWithCmd(string driveName, string volumeLabel, bool useQuickFormat = true)
 		{
-			var labelNoSpaces = volumeLabel.Replace(' ', '_');
-			var r = new Random();
-			var filename = r.Next(10000000) + ".bat";
-			var sw = File.CreateText(filename);
-			sw.WriteLine("format " + driveName + " /y" + (useQuickFormat ? " /q" : "") + " /fs:NTFS" + " /v:" + labelNoSpaces +
-			             "&& label " + driveName + " " + volumeLabel);
-			sw.Close();
+			var command = "format" + driveName + " /y" + (useQuickFormat ? "/q" : "") + " /fs:NTFS";
+			command += " && label " + driveName + " " + volumeLabel;
+
 			var proc1 = new Process
 			{
 				StartInfo =
 				{
-					FileName = filename,
 					UseShellExecute = false,
 					Verb = "runas",
 					CreateNoWindow = true,
-					WindowStyle = ProcessWindowStyle.Hidden
+					WindowStyle = ProcessWindowStyle.Hidden,
+					Arguments = command
 				}
 			};
 			proc1.Start();
 			proc1.WaitForExit();
-			File.Delete(filename);
 
 			return proc1.ExitCode == 0;
 		}
