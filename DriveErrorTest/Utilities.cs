@@ -17,6 +17,7 @@ namespace DriveErrorTest
 			{
 				StartInfo =
 				{
+					FileName = "cmd",
 					UseShellExecute = false,
 					Verb = "runas",
 					CreateNoWindow = true,
