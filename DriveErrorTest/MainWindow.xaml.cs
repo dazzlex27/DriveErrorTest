@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Shell;
+using System.Reflection;
 
 namespace DriveErrorTest
 {
@@ -16,6 +17,8 @@ namespace DriveErrorTest
 	/// </summary>
 	public partial class MainWindow
 	{
+		private readonly string _appTitleTextBase = "FDT v" + Assembly.GetExecutingAssembly().GetName().Version;
+
 		private string _sourcePath = "";
 		private string _logPath = "";
 		private Thread _t;
@@ -31,6 +34,7 @@ namespace DriveErrorTest
 
 		private void Initialize()
 		{
+			Title = _appTitleTextBase;
 			Drives = new ObservableCollection<DriveInfo>();
 			TaskbarItemInfo = new TaskbarItemInfo();
 			GetDrivesList();
@@ -139,7 +143,7 @@ namespace DriveErrorTest
 		{
 			try
 			{
-				Title = Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
+				Title = _appTitleTextBase + " - " + Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
 				_t = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
 				_t.Start();
 				SetGuiAccess(false);

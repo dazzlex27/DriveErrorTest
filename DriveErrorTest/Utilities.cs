@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Security.Permissions;
 
 namespace DriveErrorTest
@@ -10,25 +11,19 @@ namespace DriveErrorTest
 	{
 		public static bool FormatDriveWithCmd(string driveName, string volumeLabel, bool useQuickFormat = true)
 		{
-			var command = "format" + driveName + " /y" + (useQuickFormat ? "/q" : "") + " /fs:NTFS";
-			command += " && label " + driveName + " " + volumeLabel;
+			if (driveName.Length != 2 || driveName[1] != ':' || !char.IsLetter(driveName[0]))
+				return false;
 
-			var proc1 = new Process
+			//query and format given drive         
+			var searcher = new ManagementObjectSearcher
+				(@"select * from Win32_Volume WHERE DriveLetter = '" + driveName + "'");
+			foreach (ManagementObject vi in searcher.Get())
 			{
-				StartInfo =
-				{
-					FileName = "cmd",
-					UseShellExecute = false,
-					Verb = "runas",
-					CreateNoWindow = true,
-					WindowStyle = ProcessWindowStyle.Hidden,
-					Arguments = command
-				}
-			};
-			proc1.Start();
-			proc1.WaitForExit();
+				vi.InvokeMethod("Format", new object[]
+				{"NTFS", useQuickFormat, 8192, volumeLabel, false});
+			}
 
-			return proc1.ExitCode == 0;
+			return true;
 		}
 
 		public static IEnumerable<string> Traverse(string rootDirectory)
