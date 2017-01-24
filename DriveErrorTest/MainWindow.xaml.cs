@@ -7,11 +7,9 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shell;
-using System.Reflection;
 
 namespace DriveErrorTest
 {
-
 	/// <summary>
 	///     Interaction logic for MainWindow.xaml
 	/// </summary>
@@ -19,8 +17,8 @@ namespace DriveErrorTest
 	{
 		private string _sourcePath = "";
 		private string _logPath = "";
-		private Thread _t;
-		private Tester _tester;
+		private Thread _testingThread;
+		private Tester _tester; 
 		private SystemTrayHelper _systemTrayHelper;
 
 		public MainWindow()
@@ -33,21 +31,45 @@ namespace DriveErrorTest
 
 		private void Initialize()
 		{
-			bool wasMutexCreated;
-			new Mutex(true, "MutexForFDT", out wasMutexCreated);
-
-			if (!wasMutexCreated)
+			if (!CheckIfMutexIsAvailable())
 			{
 				MessageBox.Show("Приложение уже запущено!", "Ошибка запуска", MessageBoxButton.OK, MessageBoxImage.Exclamation);
 				ExitApp();
 			}
 
-			_systemTrayHelper = new SystemTrayHelper();
+			SetupTrayIcon();
+
 			Title = GlobalContext.AppTitleTextBase;
 			Drives = new ObservableCollection<DriveInfo>();
 			TaskbarItemInfo = new TaskbarItemInfo();
 			GetDrivesList();
 
+			SetupComboBoxes();
+		}
+
+		private bool CheckIfMutexIsAvailable()
+		{
+			bool wasMutexCreated;
+			new Mutex(true, "MutexForFDT", out wasMutexCreated);
+
+			return wasMutexCreated;
+		}
+
+		private void SetupTrayIcon()
+		{
+			_systemTrayHelper = new SystemTrayHelper();
+			_systemTrayHelper.Initialize();
+			_systemTrayHelper.ShowWindowEvent += SystemTrayHelper_ShowWindowEvent;
+			_systemTrayHelper.ShutAppDownEvent += SystemTrayHelper_ShutAppDownEvent;
+		}
+
+		private void SystemTrayHelper_ShutAppDownEvent()
+		{
+			ExitApp();
+		}
+
+		private void SetupComboBoxes()
+		{
 			CbTimePeriod.Items.Add("Раз в 10 минут");
 			CbTimePeriod.Items.Add("Раз в час");
 			CbTimePeriod.Items.Add("Раз в 3 часа");
@@ -60,6 +82,14 @@ namespace DriveErrorTest
 
 			CbDrives.SelectedIndex = 0;
 			CbTimePeriod.SelectedIndex = 2;
+		}
+
+		private void SystemTrayHelper_ShowWindowEvent()
+		{
+			if (IsVisible)
+				Visibility = Visibility.Hidden;
+			else
+				Visibility = Visibility.Visible;
 		}
 
 		private void GetDrivesList()
@@ -132,12 +162,12 @@ namespace DriveErrorTest
 						message += Environment.NewLine + "Путь к папке с исходными данными";
 					if (!File.Exists(_logPath))
 						message += Environment.NewLine + "Путь к журналу";
-					System.Windows.MessageBox.Show(message, "Не хватает данных", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+					MessageBox.Show(message, "Не хватает данных", MessageBoxButton.OK, MessageBoxImage.Exclamation);
 				}
 			}
 			else
 			{
-				if (System.Windows.MessageBox.Show(
+				if (MessageBox.Show(
 					"Вы действительно хотите прервать тестирование?",
 					"Подтвердите действие",
 					MessageBoxButton.YesNo,
@@ -153,8 +183,8 @@ namespace DriveErrorTest
 			try
 			{
 				Title = GlobalContext.AppTitleTextBase + " - " + Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
-				_t = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
-				_t.Start();
+				_testingThread = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
+				_testingThread.Start();
 				SetGuiAccess(false);
 				SetStartStopButtonLabel(false);
 				SetTestingStatusText("запущено");
@@ -185,7 +215,7 @@ namespace DriveErrorTest
 
 		private void TerminateTestingThread()
 		{
-			try { _t.Abort(); }
+			try { _testingThread.Abort(); }
 			catch { }
 		}
 
@@ -411,11 +441,20 @@ namespace DriveErrorTest
 			_tester.OnTestingStatusChanged -= OnTestingStatusChangedEventHandler;
 		}
 
+		private bool IsTesterRunning()
+		{
+			if (_tester == null || !_tester.IsRunning)
+				return false;
+
+			return true;
+		}
+
 		private void ExitApp()
 		{
-			if (_tester.IsRunning)
+			if (IsTesterRunning())
 				StopTest();
-			_systemTrayHelper.Dispose();
+			if (_systemTrayHelper != null)
+				_systemTrayHelper.Dispose();
 			// TODO: exit more gracefully than that
 			Environment.Exit(0);
 		}
@@ -488,7 +527,7 @@ namespace DriveErrorTest
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
 			if (_tester != null && _tester.IsRunning &&
-			    System.Windows.MessageBox.Show(
+			    MessageBox.Show(
 				    "Вы действительно хотите прервать тестирование?",
 				    "Подтвердите действие",
 				    MessageBoxButton.YesNo,

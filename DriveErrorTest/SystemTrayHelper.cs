@@ -18,6 +18,10 @@ namespace DriveErrorTest
 
 		public SystemTrayHelper()
 		{
+		}
+
+		public void Initialize()
+		{
 			_notifyIcon = new NotifyIcon
 			{
 				Icon = Properties.Resources.Firstfear_Whistlepuff_Usb,
@@ -34,14 +38,14 @@ namespace DriveErrorTest
 			_notifyIcon.ContextMenu.MenuItems.Add(_showWindowMenuItem);
 			_notifyIcon.ContextMenu.MenuItems.Add(_shutDownMenuItem);
 
-			_showWindowMenuItem.Click += _showWindowMenuItem_Click;
-			_shutDownMenuItem.Click += _shutDownMenuItem_Click;
+			_showWindowMenuItem.Click += ShowWindowMenuItem_Click;
+			_shutDownMenuItem.Click += ShutDownMenuItem_Click;
 		}
 
 		public void Dispose()
 		{
-			_showWindowMenuItem.Click -= _showWindowMenuItem_Click;
-			_shutDownMenuItem.Click -= _shutDownMenuItem_Click;
+			_showWindowMenuItem.Click -= ShowWindowMenuItem_Click;
+			_shutDownMenuItem.Click -= ShutDownMenuItem_Click;
 			_notifyIcon.ContextMenu.MenuItems.Remove(_showWindowMenuItem);
 			_notifyIcon.ContextMenu.MenuItems.Remove(_shutDownMenuItem);
 			_notifyIcon.ContextMenu.Dispose();
@@ -50,12 +54,12 @@ namespace DriveErrorTest
 			_notifyIcon.Dispose();
 		}
 
-		private void _shutDownMenuItem_Click(object sender, EventArgs e)
+		private void ShowWindowMenuItem_Click(object sender, EventArgs e)
 		{
 			ShowWindowEvent?.Invoke();
 		}
 
-		private void _showWindowMenuItem_Click(object sender, EventArgs e)
+		private void ShutDownMenuItem_Click(object sender, EventArgs e)
 		{
 			ShutAppDownEvent?.Invoke();
 		}

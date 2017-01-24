@@ -48,10 +48,10 @@ namespace DriveErrorTest
 					eventString = "Информация";
 					break;
 					case EventType.Error:
-					eventString = "Ошибка!";
+					eventString = "Ошибка";
 					break;
 					case EventType.Exception:
-					eventString = "Исключительная ситуация!";
+					eventString = "Исключительная ситуация";
 					break;
 				default:
 					eventString = "";
@@ -62,7 +62,7 @@ namespace DriveErrorTest
 			{
 				case ".txt":
 					var timestampString = timestamp.ToShortDateString() + " " + timestamp.ToLongTimeString();
-					WriteToTxtFile(timestampString + " " + eventString + " " + message +
+					WriteToTxtFile(timestampString + " " + eventString + ": " + message +
 					               (exceptionText == "" ? "" : (" Текст ошибки: " + exceptionText)));
 					break;
 				case ".csv":
