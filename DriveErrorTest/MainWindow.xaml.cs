@@ -66,7 +66,7 @@ namespace DriveErrorTest
 				Drives.Add(drive);
 				CbDrives.Items.Add(drive.Name + drive.VolumeLabel);
 				SetGuiAccess(true);
-				BtLaunchTesting.IsEnabled = true;
+				BtStartStopTesting.IsEnabled = true;
 			}
 
 			if (!CbDrives.Items.IsEmpty)
@@ -74,7 +74,7 @@ namespace DriveErrorTest
 
 			 CbDrives.Items.Add("<Съемные диски не найдены>");
 			SetGuiAccess(false);
-			BtLaunchTesting.IsEnabled = false;
+			BtStartStopTesting.IsEnabled = false;
 			BtShowLog.IsEnabled = false;
 		}
 
@@ -108,7 +108,7 @@ namespace DriveErrorTest
 			return Directory.Exists(_sourcePath) && File.Exists(_logPath);
 		}
 
-		private void BtLaunchTesting_OnClick(object sender, RoutedEventArgs e)
+		private void BtStartStopTesting_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (_tester == null || !_tester.IsRunning)
 			{
@@ -149,6 +149,7 @@ namespace DriveErrorTest
 				SetGuiAccess(false);
 				SetStartStopButtonLabel(false);
 				SetTestingStatusText("запущено");
+				BtPausehTesting.Visibility = Visibility.Visible;
 				SetGuiAccess(false);
 			}
 			catch (Exception)
@@ -164,10 +165,11 @@ namespace DriveErrorTest
 			UnsubscribeFromTesterEvents();
 			_tester.StopTest();
 			do { } while (_tester.IsRunning);
-			BtLaunchTesting.Content = "Начать тестирование";
+			SetStartStopButtonLabel(true);
 			SetTestingStatusText("остановлено");
 			SetBackgroundColor(Color.FromRgb(255, 255, 255));
 			SetTaskbarStatus(TaskbarItemProgressState.None, 0);
+			BtPausehTesting.Visibility = Visibility.Hidden;
 			SetCurrentFileText(" ");
 			SetGuiAccess(true);
 		}
@@ -296,13 +298,9 @@ namespace DriveErrorTest
 			{
 				if (Dispatcher.CheckAccess())
 				{
-					if (BtLaunchTesting.Dispatcher.CheckAccess())
+					if (BtStartStopTesting.Dispatcher.CheckAccess())
 					{
-						if (start)
-						BtLaunchTesting.Content = "Запустить тестирование";
-						else
-							BtLaunchTesting.Content = "Остановить тестирование";
-						
+						BtStartStopTesting.Content = start ? "Начать" : "Остановить";
 					}
 					else
 						LbCurrFileStrip.Dispatcher.Invoke(new Action<bool>(SetStartStopButtonLabel), start);
@@ -404,6 +402,11 @@ namespace DriveErrorTest
 			_tester.OnTestingStatusChanged -= OnTestingStatusChangedEventHandler;
 		}
 
+		private void ExitApp()
+		{
+			Environment.Exit(0);
+		}
+
 		private void OnTestingStatusChangedEventHandler(string statusText)
 		{
 			SetTestingStatusText(statusText);
@@ -488,7 +491,17 @@ namespace DriveErrorTest
 				TerminateTestingThread();
 			}
 
-			Environment.Exit(0);
+			ExitApp();
+		}
+
+		private void MenuItem_OnClick(object sender, RoutedEventArgs e)
+		{
+			ExitApp();
+		}
+
+		private void BtPausehTesting_OnClick(object sender, RoutedEventArgs e)
+		{
+			
 		}
 	}
 }
