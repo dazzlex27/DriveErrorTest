@@ -15,120 +15,14 @@
 				<MenuItem Header="Выход" Click="MenuItem_OnClick"></MenuItem>
 			</MenuItem>
 		</Menu>
-		<Grid>
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition/>
-				<ColumnDefinition/>
-			</Grid.ColumnDefinitions>
-			<!-- Main parameters -->
-			<GroupBox Grid.Column="0" Margin="3,0,3,3">
-				<GroupBox.Header>
-					<TextBlock Text="Основные параметры"/>
-				</GroupBox.Header>
-				<StackPanel>
-					<Label Margin="3,0"  
-				   Content="Выбор диска:"/>
-					<ComboBox Name="CbDrives"
-					  Margin="3,0"
-					  Padding="10,5"/>
-					<Label Margin="3,3,3,0" 
-				   Content="Период перезаписи данных:"/>
-					<ComboBox Name="CbTimePeriod" 
-					  Margin="3,0,3,3"
-					  Padding="10,5"/>
-				</StackPanel>
-			</GroupBox>
-			<!-- Data paths -->
-			<GroupBox Grid.Column="1" Margin="3">
-				<GroupBox.Header>
-					<TextBlock Text="Пути к данным"/>
-				</GroupBox.Header>
-				<StackPanel>
-					<StackPanel>
-						<Label Name="LbInputPath" 
-					   Margin="0,3,3,0"
-				   MaxWidth="270"
-				   HorizontalAlignment="Left"
-				   Content="&lt;Источник данных не выбран&gt;"/>
-						<Button Name="BtSelectSourcePath" 
-						Margin="3,0,3,3"
-						Padding="10,5"
-						HorizontalAlignment="Left" 
-						Content="Выбрать папку с данными..."
-						Click="BtSelectTestData_OnClick"/>
-					</StackPanel>
-					<StackPanel>
-						<Label Name="LbLogPath" 
-					   Margin="0,3,3,0"
-				   MaxWidth="270"
-				   HorizontalAlignment="Left"
-				   Content="&lt;Журнал не выбран&gt;"/>
-						<Button Name="BtSelectLogPath" 
-						Margin="3,0,3,3"
-						Padding="10,5"
-						HorizontalAlignment="Left" 
-						Content="Выбрать файл журнала..."
-						Click="BtSelectLogPath_OnClick"/>
-					</StackPanel>
-				</StackPanel>
-			</GroupBox>
-		</Grid>
-		<!-- Actions -->
-		<GroupBox Margin="3,0,3,3">
-			<GroupBox.Header>
-				<TextBlock Text="Действия"/>
-			</GroupBox.Header>
-			<Grid>
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition/>
-					<ColumnDefinition/>
-				</Grid.ColumnDefinitions>
-				<GroupBox>
-					<GroupBox.Header>
-						<TextBlock Text="Параметры запуска"/>
-					</GroupBox.Header>
-					<StackPanel>
-						<StackPanel Orientation="Horizontal">
-							<CheckBox Name="CbDelayTimer" Content="Отложенный запуск" Margin="5" VerticalAlignment="Center" ToolTip="Установить таймер " />
-						</StackPanel>
-						<StackPanel Orientation="Horizontal">
-							<CheckBox Name="CbForceRestartUponCrash" Content="Перезапускать тесты при авариях" Margin="5" VerticalAlignment="Center" ToolTip="Форматировать устройство перед началом тестирования" />
-						</StackPanel>
-						<CheckBox Name="CbCleanStart" Content="Форматировать диск" Margin="5" VerticalAlignment="Center" ToolTip="Форматировать устройство перед началом тестирования" />
-					</StackPanel>
-				</GroupBox>
-				<StackPanel Name="SpActions" HorizontalAlignment="Right" MinWidth="100" Grid.Column="1">
-					<Button Name="BtStartStopTesting" Margin="6,5" Padding="10,5" HorizontalAlignment="Stretch" Content="Начать" Click="BtStartStopTesting_OnClick"/>
-					<Button Name="BtPausehTesting" Margin="6,5" Padding="10,5" HorizontalAlignment="Stretch" Visibility="Hidden" Content="Пауза" Click="BtPausehTesting_OnClick"/>
-				</StackPanel>
-			</Grid>
+
+		<DataGrid>
+			<DataGrid.Columns>
+				<DataGridTextColumn Header="Состояние"/>
+				<DataGridTextColumn Header="Наименование"/>
+				<DataGridTextColumn Header="Статус"/>
+			</DataGrid.Columns>
 			
-		</GroupBox>
-		<!-- Status -->
-		<GroupBox Margin="3,0,3,3">
-			<GroupBox.Header>
-				<TextBlock Text="Состояние"/>
-			</GroupBox.Header>
-			<StackPanel>
-				<StackPanel>
-					<StackPanel Orientation="Horizontal">
-						<Label Margin="3,0,0,0" Content="Состояние:"/>
-						<Label Name="LbStatusStrip" Margin="0,0,0,0"/>
-					</StackPanel>
-				</StackPanel>
-				<StackPanel Orientation="Horizontal">
-					<Label Margin="3,0,0,0" Content="Циклов записи:"/>
-					<Label Name="LbWriteCyclesStrip" Margin="0,0,0,0"/>
-				</StackPanel>
-				<StackPanel Orientation="Horizontal">
-					<Label Margin="3,0,0,0" Content="Проверено файлов:"/>
-					<Label Name="LbReadCyclesStrip" Margin="0,0,0,0"/>
-				</StackPanel>
-				<StackPanel Orientation="Horizontal">
-					<Label Margin="3,0,0,0" Content="Текущий файл:"/>
-					<Label Name="LbCurrFileStrip" Margin="0,0,0,0"/>
-				</StackPanel>
-			</StackPanel>
-		</GroupBox>
+		</DataGrid>
 	</StackPanel>
 </Window>

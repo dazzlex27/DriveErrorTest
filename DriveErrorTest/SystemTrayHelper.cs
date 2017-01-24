@@ -14,6 +14,7 @@ namespace DriveErrorTest
 
 		private NotifyIcon _notifyIcon;
 		private MenuItem _showWindowMenuItem;
+		private MenuItem _separatorMenuItem;
 		private MenuItem _shutDownMenuItem;
 
 		public SystemTrayHelper()
@@ -31,11 +32,13 @@ namespace DriveErrorTest
 				Visible = true
 			};
 
-			_showWindowMenuItem = new MenuItem("Показать окно");
+			_showWindowMenuItem = new MenuItem("Показать/скрыть окно");
+			_separatorMenuItem = new MenuItem("-");
 			_shutDownMenuItem = new MenuItem("Выйти из приложения");
 
 			_notifyIcon.ContextMenu = new ContextMenu();
 			_notifyIcon.ContextMenu.MenuItems.Add(_showWindowMenuItem);
+			_notifyIcon.ContextMenu.MenuItems.Add(_separatorMenuItem);
 			_notifyIcon.ContextMenu.MenuItems.Add(_shutDownMenuItem);
 
 			_showWindowMenuItem.Click += ShowWindowMenuItem_Click;
@@ -47,6 +50,7 @@ namespace DriveErrorTest
 			_showWindowMenuItem.Click -= ShowWindowMenuItem_Click;
 			_shutDownMenuItem.Click -= ShutDownMenuItem_Click;
 			_notifyIcon.ContextMenu.MenuItems.Remove(_showWindowMenuItem);
+			_notifyIcon.ContextMenu.MenuItems.Remove(_separatorMenuItem);
 			_notifyIcon.ContextMenu.MenuItems.Remove(_shutDownMenuItem);
 			_notifyIcon.ContextMenu.Dispose();
 			_showWindowMenuItem.Dispose();

@@ -70,18 +70,18 @@ namespace DriveErrorTest
 
 		private void SetupComboBoxes()
 		{
-			CbTimePeriod.Items.Add("Раз в 10 минут");
-			CbTimePeriod.Items.Add("Раз в час");
-			CbTimePeriod.Items.Add("Раз в 3 часа");
-			CbTimePeriod.Items.Add("Раз в 6 часов");
-			CbTimePeriod.Items.Add("Раз в 12 часов");
-			CbTimePeriod.Items.Add("Раз в сутки");
-			CbTimePeriod.Items.Add("Раз в двое суток");
-			CbTimePeriod.Items.Add("Раз в трое суток");
-			CbTimePeriod.Items.Add("Раз в неделю");
+			//CbTimePeriod.Items.Add("Раз в 10 минут");
+			//CbTimePeriod.Items.Add("Раз в час");
+			//CbTimePeriod.Items.Add("Раз в 3 часа");
+			//CbTimePeriod.Items.Add("Раз в 6 часов");
+			//CbTimePeriod.Items.Add("Раз в 12 часов");
+			//CbTimePeriod.Items.Add("Раз в сутки");
+			//CbTimePeriod.Items.Add("Раз в двое суток");
+			//CbTimePeriod.Items.Add("Раз в трое суток");
+			//CbTimePeriod.Items.Add("Раз в неделю");
 
-			CbDrives.SelectedIndex = 0;
-			CbTimePeriod.SelectedIndex = 2;
+			//CbDrives.SelectedIndex = 0;
+			//CbTimePeriod.SelectedIndex = 2;
 		}
 
 		private void SystemTrayHelper_ShowWindowEvent()
@@ -94,52 +94,52 @@ namespace DriveErrorTest
 
 		private void GetDrivesList()
 		{
-			// TODO: bind combobox to collection
-			Drives.Clear();
-			CbDrives.Items.Clear();
+			//// TODO: bind combobox to collection
+			//Drives.Clear();
+			//CbDrives.Items.Clear();
 
-			var drives = DriveInfo.GetDrives().Where(drive => drive.IsReady && drive.DriveType == DriveType.Removable);
+			//var drives = DriveInfo.GetDrives().Where(drive => drive.IsReady && drive.DriveType == DriveType.Removable);
 
-			foreach (var drive in drives.Where(drive => drive.DriveType == DriveType.Removable))
-			{
-				Drives.Add(drive);
-				CbDrives.Items.Add(drive.Name + drive.VolumeLabel);
-				SetGuiAccess(true);
-				BtStartStopTesting.IsEnabled = true;
-			}
+			//foreach (var drive in drives.Where(drive => drive.DriveType == DriveType.Removable))
+			//{
+			//	Drives.Add(drive);
+			//	CbDrives.Items.Add(drive.Name + drive.VolumeLabel);
+			//	SetGuiAccess(true);
+			//	BtStartStopTesting.IsEnabled = true;
+			//}
 
-			if (!CbDrives.Items.IsEmpty)
-				return;
+			//if (!CbDrives.Items.IsEmpty)
+			//	return;
 
-			 CbDrives.Items.Add("<Съемные диски не найдены>");
-			SetGuiAccess(false);
-			BtStartStopTesting.IsEnabled = false;
-			BtShowLog.IsEnabled = false;
+			// CbDrives.Items.Add("<Съемные диски не найдены>");
+			//SetGuiAccess(false);
+			//BtStartStopTesting.IsEnabled = false;
+			//BtShowLog.IsEnabled = false;
 		}
 
 		private void SetGuiAccess(bool active)
 		{
-			if (Dispatcher.CheckAccess())
-			{
-				CbTimePeriod.Dispatcher.Invoke(new Action(() => CbTimePeriod.IsEnabled = active));
-				CbDrives.Dispatcher.Invoke(new Action(() => CbDrives.IsEnabled = active));
-				BtSelectSourcePath.Dispatcher.Invoke(new Action(() => BtSelectSourcePath.IsEnabled = active));
-				BtSelectLogPath.Dispatcher.Invoke(new Action(() => BtSelectLogPath.IsEnabled = active));
-				CbCleanStart.Dispatcher.Invoke(new Action(() => CbCleanStart.IsEnabled = active));
-			}
-			else
-				Dispatcher.Invoke(new Action<bool>(SetGuiAccess), active);
+			//if (Dispatcher.CheckAccess())
+			//{
+			//	CbTimePeriod.Dispatcher.Invoke(new Action(() => CbTimePeriod.IsEnabled = active));
+			//	CbDrives.Dispatcher.Invoke(new Action(() => CbDrives.IsEnabled = active));
+			//	BtSelectSourcePath.Dispatcher.Invoke(new Action(() => BtSelectSourcePath.IsEnabled = active));
+			//	BtSelectLogPath.Dispatcher.Invoke(new Action(() => BtSelectLogPath.IsEnabled = active));
+			//	CbCleanStart.Dispatcher.Invoke(new Action(() => CbCleanStart.IsEnabled = active));
+			//}
+			//else
+			//	Dispatcher.Invoke(new Action<bool>(SetGuiAccess), active);
 		}
 
 		private void BtSelectTestData_OnClick(object sender, RoutedEventArgs e)
 		{
-			var dg = new System.Windows.Forms.FolderBrowserDialog();
+			//var dg = new System.Windows.Forms.FolderBrowserDialog();
 
-			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-				return;
+			//if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+			//	return;
 
-			_sourcePath = dg.SelectedPath;
-			LbInputPath.Content = _sourcePath;
+			//_sourcePath = dg.SelectedPath;
+			//LbInputPath.Content = _sourcePath;
 		}
 
 		private bool ReadyToTest()
@@ -180,37 +180,37 @@ namespace DriveErrorTest
 
 		private void StartTest()
 		{
-			try
-			{
-				Title = GlobalContext.AppTitleTextBase + " - " + Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
-				_testingThread = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
-				_testingThread.Start();
-				SetGuiAccess(false);
-				SetStartStopButtonLabel(false);
-				SetTestingStatusText("запущено");
-				BtPausehTesting.Visibility = Visibility.Visible;
-				SetGuiAccess(false);
-			}
-			catch (Exception)
-			{
-				MessageBox.Show(
-					"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства и файла журнала",
-					"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-			}
+			//try
+			//{
+			//	Title = GlobalContext.AppTitleTextBase + " - " + Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
+			//	_testingThread = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
+			//	_testingThread.Start();
+			//	SetGuiAccess(false);
+			//	SetStartStopButtonLabel(false);
+			//	SetTestingStatusText("запущено");
+			//	BtPausehTesting.Visibility = Visibility.Visible;
+			//	SetGuiAccess(false);
+			//}
+			//catch (Exception)
+			//{
+			//	MessageBox.Show(
+			//		"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства и файла журнала",
+			//		"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+			//}
 		}
 
 		private void StopTest()
 		{
-			UnsubscribeFromTesterEvents();
-			_tester.StopTest();
-			do { } while (_tester.IsRunning);
-			SetStartStopButtonLabel(true);
-			SetTestingStatusText("остановлено");
-			SetBackgroundColor(Color.FromRgb(255, 255, 255));
-			SetTaskbarStatus(TaskbarItemProgressState.None, 0);
-			BtPausehTesting.Visibility = Visibility.Hidden;
-			SetCurrentFileText(" ");
-			SetGuiAccess(true);
+			//UnsubscribeFromTesterEvents();
+			//_tester.StopTest();
+			//do { } while (_tester.IsRunning);
+			//SetStartStopButtonLabel(true);
+			//SetTestingStatusText("остановлено");
+			//SetBackgroundColor(Color.FromRgb(255, 255, 255));
+			//SetTaskbarStatus(TaskbarItemProgressState.None, 0);
+			//BtPausehTesting.Visibility = Visibility.Hidden;
+			//SetCurrentFileText(" ");
+			//SetGuiAccess(true);
 		}
 
 		private void TerminateTestingThread()
@@ -235,121 +235,121 @@ namespace DriveErrorTest
 
 		private void SetTestingStatusText(string message)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (LbStatusStrip.Dispatcher.CheckAccess())
-						LbStatusStrip.Content = message;
-					else
-						LbStatusStrip.Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
-				}
-				else
-					Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
-			}
-			catch (Exception)
-			{
-			}
+			//try
+			//{
+			//	if (Dispatcher.CheckAccess())
+			//	{
+			//		if (LbStatusStrip.Dispatcher.CheckAccess())
+			//			LbStatusStrip.Content = message;
+			//		else
+			//			LbStatusStrip.Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
+			//	}
+			//	else
+			//		Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
+			//}
+			//catch (Exception)
+			//{
+			//}
 		}
 
 		private void SetReadCyclesCountText(ulong cycles)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (LbReadCyclesStrip.Dispatcher.CheckAccess())
-						LbReadCyclesStrip.Content = cycles;
-					else
-						LbReadCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetReadCyclesCountText), cycles);
-				}
-				else
-					Dispatcher.Invoke(new Action<ulong>(SetReadCyclesCountText), cycles);
-			}
-			catch (Exception)
-			{
-			}
+			//try
+			//{
+			//	if (Dispatcher.CheckAccess())
+			//	{
+			//		if (LbReadCyclesStrip.Dispatcher.CheckAccess())
+			//			LbReadCyclesStrip.Content = cycles;
+			//		else
+			//			LbReadCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetReadCyclesCountText), cycles);
+			//	}
+			//	else
+			//		Dispatcher.Invoke(new Action<ulong>(SetReadCyclesCountText), cycles);
+			//}
+			//catch (Exception)
+			//{
+			//}
 		}
 
 		private void SetWriteCyclesCountText(ulong cycles)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (LbWriteCyclesStrip.Dispatcher.CheckAccess())
-						LbWriteCyclesStrip.Content = cycles;
-					else
-						LbWriteCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetWriteCyclesCountText), cycles);
-				}
-				else
-					Dispatcher.Invoke(new Action<ulong>(SetWriteCyclesCountText), cycles);
-			}
-			catch (Exception)
-			{
-			}
+			//try
+			//{
+			//	if (Dispatcher.CheckAccess())
+			//	{
+			//		if (LbWriteCyclesStrip.Dispatcher.CheckAccess())
+			//			LbWriteCyclesStrip.Content = cycles;
+			//		else
+			//			LbWriteCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetWriteCyclesCountText), cycles);
+			//	}
+			//	else
+			//		Dispatcher.Invoke(new Action<ulong>(SetWriteCyclesCountText), cycles);
+			//}
+			//catch (Exception)
+			//{
+			//}
 		}
 
 		private void SetTaskbarStatus(TaskbarItemProgressState state, double value)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (TaskbarItemInfo.Dispatcher.CheckAccess())
-					{
-						TaskbarItemInfo.ProgressState = state;
-						TaskbarItemInfo.ProgressValue = value;
-					}
-					else
-						LbWriteCyclesStrip.Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
-				}
-				else
-					Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
-			}
-			catch (Exception)
-			{
-			}
+			//try
+			//{
+			//	if (Dispatcher.CheckAccess())
+			//	{
+			//		if (TaskbarItemInfo.Dispatcher.CheckAccess())
+			//		{
+			//			TaskbarItemInfo.ProgressState = state;
+			//			TaskbarItemInfo.ProgressValue = value;
+			//		}
+			//		else
+			//			LbWriteCyclesStrip.Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
+			//	}
+			//	else
+			//		Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
+			//}
+			//catch (Exception)
+			//{
+			//}
 		}
 
 		private void SetCurrentFileText(string filepath)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (LbCurrFileStrip.Dispatcher.CheckAccess())
-						LbCurrFileStrip.Content = filepath;
-					else
-						LbCurrFileStrip.Dispatcher.Invoke(new Action<string>(SetCurrentFileText), filepath);
-				}
-				else
-					Dispatcher.Invoke(new Action<string>(SetCurrentFileText), filepath);
-			}
-			catch (Exception)
-			{
-			}
+			//try
+			//{
+			//	if (Dispatcher.CheckAccess())
+			//	{
+			//		if (LbCurrFileStrip.Dispatcher.CheckAccess())
+			//			LbCurrFileStrip.Content = filepath;
+			//		else
+			//			LbCurrFileStrip.Dispatcher.Invoke(new Action<string>(SetCurrentFileText), filepath);
+			//	}
+			//	else
+			//		Dispatcher.Invoke(new Action<string>(SetCurrentFileText), filepath);
+			//}
+			//catch (Exception)
+			//{
+			//}
 		}
 
 		private void SetStartStopButtonLabel(bool start)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-				{
-					if (BtStartStopTesting.Dispatcher.CheckAccess())
-					{
-						BtStartStopTesting.Content = start ? "Начать" : "Остановить";
-					}
-					else
-						LbCurrFileStrip.Dispatcher.Invoke(new Action<bool>(SetStartStopButtonLabel), start);
-				}
-				else
-					Dispatcher.Invoke(new Action<bool>(SetStartStopButtonLabel), start);
-			}
-			catch (Exception)
-			{
-			}
+			//try
+			//{
+			//	if (Dispatcher.CheckAccess())
+			//	{
+			//		if (BtStartStopTesting.Dispatcher.CheckAccess())
+			//		{
+			//			BtStartStopTesting.Content = start ? "Начать" : "Остановить";
+			//		}
+			//		else
+			//			LbCurrFileStrip.Dispatcher.Invoke(new Action<bool>(SetStartStopButtonLabel), start);
+			//	}
+			//	else
+			//		Dispatcher.Invoke(new Action<bool>(SetStartStopButtonLabel), start);
+			//}
+			//catch (Exception)
+			//{
+			//}
 		}
 
 		public static int GetSelectedIndex(System.Windows.Controls.ComboBox combobox)
@@ -371,50 +371,50 @@ namespace DriveErrorTest
 
 		private void CreateTester(int periodValue, bool cleanStart)
 		{
-			TimeSpan span;
+			//TimeSpan span;
 
-			switch (periodValue)
-			{
-				case 0:
-					span = TimeSpan.FromMinutes(10);
-					break;
-				case 1:
-					span = TimeSpan.FromHours(1);
-					break;
-				case 2:
-					span = TimeSpan.FromHours(3);
-					break;
-				case 3:
-					span = TimeSpan.FromHours(6);
-					break;
-				case 4:
-					span = TimeSpan.FromHours(12);
-					break;
-				case 5:
-					span = TimeSpan.FromDays(1);
-					break;
-				case 6:
-					span = TimeSpan.FromDays(2);
-					break;
-				case 7:
-					span = TimeSpan.FromDays(3);
-					break;
-				case 8:
-					span = TimeSpan.FromDays(7);
-					break;
-				default:
-					span = TimeSpan.FromDays(1);
-					break;
-			}
+			//switch (periodValue)
+			//{
+			//	case 0:
+			//		span = TimeSpan.FromMinutes(10);
+			//		break;
+			//	case 1:
+			//		span = TimeSpan.FromHours(1);
+			//		break;
+			//	case 2:
+			//		span = TimeSpan.FromHours(3);
+			//		break;
+			//	case 3:
+			//		span = TimeSpan.FromHours(6);
+			//		break;
+			//	case 4:
+			//		span = TimeSpan.FromHours(12);
+			//		break;
+			//	case 5:
+			//		span = TimeSpan.FromDays(1);
+			//		break;
+			//	case 6:
+			//		span = TimeSpan.FromDays(2);
+			//		break;
+			//	case 7:
+			//		span = TimeSpan.FromDays(3);
+			//		break;
+			//	case 8:
+			//		span = TimeSpan.FromDays(7);
+			//		break;
+			//	default:
+			//		span = TimeSpan.FromDays(1);
+			//		break;
+			//}
 
-			_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, span)
-			{
-				CleanStart = cleanStart
-			};
+			//_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, span)
+			//{
+			//	CleanStart = cleanStart
+			//};
 
-			SubscribeToTesterEvents();
+			//SubscribeToTesterEvents();
 
-			_tester.RunTest();
+			//_tester.RunTest();
 		}
 
 		private void SubscribeToTesterEvents()
@@ -505,17 +505,17 @@ namespace DriveErrorTest
 
 		private void BtSelectLogPath_OnClick(object sender, RoutedEventArgs e)
 		{
-			var dg = new System.Windows.Forms.OpenFileDialog
-			{
-				Filter = "Текстовые файлы (*.txt)|*.txt|Файлы CSV (*.csv)|*.csv|Все доступные форматы|*.txt;*.csv"
-			};
+			//var dg = new System.Windows.Forms.OpenFileDialog
+			//{
+			//	Filter = "Текстовые файлы (*.txt)|*.txt|Файлы CSV (*.csv)|*.csv|Все доступные форматы|*.txt;*.csv"
+			//};
 
-			if (dg.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
-				return;
+			//if (dg.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
+			//	return;
 
-			_logPath = dg.FileName;
-			LbLogPath.Content = _logPath;
-			BtShowLog.IsEnabled = true;
+			//_logPath = dg.FileName;
+			//LbLogPath.Content = _logPath;
+			//BtShowLog.IsEnabled = true;
 		}
 
 		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
