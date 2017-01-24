@@ -59,5 +59,15 @@ namespace DriveErrorTest.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        internal static System.Drawing.Icon Firstfear_Whistlepuff_Usb {
+            get {
+                object obj = ResourceManager.GetObject("Firstfear_Whistlepuff_Usb", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
     }
 }

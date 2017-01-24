@@ -5,24 +5,23 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
-using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Shell;
 using System.Reflection;
 
 namespace DriveErrorTest
 {
+
 	/// <summary>
 	///     Interaction logic for MainWindow.xaml
 	/// </summary>
 	public partial class MainWindow
 	{
-		private readonly string _appTitleTextBase = "FDT v" + Assembly.GetExecutingAssembly().GetName().Version;
-
 		private string _sourcePath = "";
 		private string _logPath = "";
 		private Thread _t;
 		private Tester _tester;
+		private SystemTrayHelper _systemTrayHelper;
 
 		public MainWindow()
 		{
@@ -34,7 +33,17 @@ namespace DriveErrorTest
 
 		private void Initialize()
 		{
-			Title = _appTitleTextBase;
+			bool wasMutexCreated;
+			new Mutex(true, "MutexForFDT", out wasMutexCreated);
+
+			if (!wasMutexCreated)
+			{
+				MessageBox.Show("Приложение уже запущено!", "Ошибка запуска", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+				ExitApp();
+			}
+
+			_systemTrayHelper = new SystemTrayHelper();
+			Title = GlobalContext.AppTitleTextBase;
 			Drives = new ObservableCollection<DriveInfo>();
 			TaskbarItemInfo = new TaskbarItemInfo();
 			GetDrivesList();
@@ -94,7 +103,7 @@ namespace DriveErrorTest
 
 		private void BtSelectTestData_OnClick(object sender, RoutedEventArgs e)
 		{
-			var dg = new FolderBrowserDialog();
+			var dg = new System.Windows.Forms.FolderBrowserDialog();
 
 			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
 				return;
@@ -143,7 +152,7 @@ namespace DriveErrorTest
 		{
 			try
 			{
-				Title = _appTitleTextBase + " - " + Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
+				Title = GlobalContext.AppTitleTextBase + " - " + Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
 				_t = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
 				_t.Start();
 				SetGuiAccess(false);
@@ -154,7 +163,7 @@ namespace DriveErrorTest
 			}
 			catch (Exception)
 			{
-				System.Windows.MessageBox.Show(
+				MessageBox.Show(
 					"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства и файла журнала",
 					"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
@@ -404,6 +413,10 @@ namespace DriveErrorTest
 
 		private void ExitApp()
 		{
+			if (_tester.IsRunning)
+				StopTest();
+			_systemTrayHelper.Dispose();
+			// TODO: exit more gracefully than that
 			Environment.Exit(0);
 		}
 
@@ -453,7 +466,7 @@ namespace DriveErrorTest
 
 		private void BtSelectLogPath_OnClick(object sender, RoutedEventArgs e)
 		{
-			var dg = new OpenFileDialog
+			var dg = new System.Windows.Forms.OpenFileDialog
 			{
 				Filter = "Текстовые файлы (*.txt)|*.txt|Файлы CSV (*.csv)|*.csv|Все доступные форматы|*.txt;*.csv"
 			};
