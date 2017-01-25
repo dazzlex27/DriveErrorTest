@@ -15,8 +15,11 @@ namespace DriveErrorTest
 
 		private readonly FileInfo _fileInfo;
 
+		public string Path { get; }
+
 		public Logger(string path)
 		{
+			Path = path;
 			_fileInfo = new FileInfo(path);
 		}
 

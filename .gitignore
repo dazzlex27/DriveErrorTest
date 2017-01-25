@@ -4,15 +4,6 @@ obj
 /DriveErrorTest/bin/Debug/DriveErrorTest.vshost.exe.manifest
 /DriveErrorTest/bin/Release/DriveErrorTest.vshost.exe.config
 /DriveErrorTest/bin/Release/DriveErrorTest.vshost.exe.manifest
-/DriveErrorTest/bin/Release/DriveErrorTest v1.15.exe.config
-/DriveErrorTest/bin/Release/DriveErrorTest v1.15.pdb
-/DriveErrorTest/bin/Release/DriveErrorTest v1.15.vshost.exe
-/DriveErrorTest/bin/Release/DriveErrorTest v1.15.vshost.exe.config
-/DriveErrorTest/bin/Release/DriveErrorTest v1.15.vshost.exe.manifest
-/DriveErrorTest/bin/Debug/DriveErrorTest v1.15.vshost.exe.manifest
 /DriveErrorTest/bin/Debug/DriveErrorTest.vshost.exe
-/DriveErrorTest/bin/Debug/DriveErrorTest v1.15.exe.config
-/DriveErrorTest/bin/Debug/DriveErrorTest v1.15.pdb
-/DriveErrorTest/bin/Debug/DriveErrorTest v1.15.vshost.exe
-/DriveErrorTest/bin/Debug/DriveErrorTest v1.15.vshost.exe.config
-/DriveErrorTest/bin/Debug/*.pdb
+*.config
+*.pdb

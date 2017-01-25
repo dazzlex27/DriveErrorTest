@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -8,8 +9,11 @@ namespace DriveErrorTest
 	{
 		public ObservableCollection<DriveInfoStorage> DriveList { get; set; }
 
+		public DirectoryInfo SourceDirectory { get; set; }
+
 		public void Initialize()
 		{
+			DriveList = new ObservableCollection<DriveInfoStorage>();
 			PopulateDriveList();
 		}
 
@@ -37,6 +41,14 @@ namespace DriveErrorTest
 		{
 			foreach (var drive in DriveList)
 				drive.StopTest(false);
+		}
+
+		public void ShowLogSelected(int selectedIndex)
+		{
+			var path = DriveList[selectedIndex].Settings.Log.Path;
+
+			if (File.Exists(path))
+				Process.Start(path);
 		}
 	}
 }

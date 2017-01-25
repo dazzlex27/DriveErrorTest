@@ -53,6 +53,9 @@ namespace DriveErrorTest
 
 		public void StopTest(bool force)
 		{
+			if (_tester == null || !_tester.IsRunning)
+				return;
+
 			if (force)
 			{
 				try { _testerThread.Abort(); }

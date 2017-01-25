@@ -71,6 +71,7 @@
     <Compile Include="DriveManager.cs" />
     <Compile Include="DriveTesterSettings.cs" />
     <Compile Include="GlobalContext.cs" />
+    <Compile Include="GUIHelpers.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="SystemTrayHelper.cs" />
     <Compile Include="DriveTester.cs" />

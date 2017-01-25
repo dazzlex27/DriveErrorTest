@@ -31,6 +31,7 @@ namespace DriveErrorTest
 			InitializeTrayIcon();
 			Title = GlobalContext.AppTitleTextBase;
 			TaskbarItemInfo = new TaskbarItemInfo();
+			PopulateComboboxes();
 
 			InitializeDriveManager();
 		}
@@ -67,23 +68,8 @@ namespace DriveErrorTest
 
 		private void SystemTrayHelper_ShutAppDownEvent()
 		{
-			ExitApp();
-		}
-
-		private void SetupComboBoxes()
-		{
-			//CbTimePeriod.Items.Add("Раз в 10 минут");
-			//CbTimePeriod.Items.Add("Раз в час");
-			//CbTimePeriod.Items.Add("Раз в 3 часа");
-			//CbTimePeriod.Items.Add("Раз в 6 часов");
-			//CbTimePeriod.Items.Add("Раз в 12 часов");
-			//CbTimePeriod.Items.Add("Раз в сутки");
-			//CbTimePeriod.Items.Add("Раз в двое суток");
-			//CbTimePeriod.Items.Add("Раз в трое суток");
-			//CbTimePeriod.Items.Add("Раз в неделю");
-
-			//CbDrives.SelectedIndex = 0;
-			//CbTimePeriod.SelectedIndex = 2;
+			if (AskToConfirmExit())
+				ExitApp();
 		}
 
 		private void SetGuiAccess(bool active)
@@ -107,14 +93,9 @@ namespace DriveErrorTest
 			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
 				return;
 
-			//_sourcePath = dg.SelectedPath;
-			//LbInputPath.Content = _sourcePath;
+			_driveManager.SourceDirectory = new System.IO.DirectoryInfo(dg.SelectedPath);
+			LbInputPath.Content = _driveManager.SourceDirectory.FullName;
 		}
-
-		//private bool ReadyToTest()
-		//{
-		//	//return Directory.Exists(_sourcePath) && File.Exists(_logPath);
-		//}
 
 		private void BtStartStopTesting_OnClick(object sender, RoutedEventArgs e)
 		{
@@ -182,122 +163,54 @@ namespace DriveErrorTest
 			//SetGuiAccess(true);
 		}
 
-		private void TerminateTestingThread()
-		{
-			//try { _testingThread.Abort(); }
-			//catch { }
-		}
-
 		public void SetBackgroundColor(Color color)
 		{
-			try
-			{
-				if (Dispatcher.CheckAccess())
-					Background = new SolidColorBrush(color);
-				else
-					Dispatcher.Invoke(new Action<Color>(SetBackgroundColor), color);
-			}
-			catch (Exception)
-			{
-			}
+			GUIHelpers.SetWindowBackgroundColor(this, color);
 		}
 
 		private void SetTestingStatusText(string message)
 		{
-			//try
-			//{
-			//	if (Dispatcher.CheckAccess())
-			//	{
-			//		if (LbStatusStrip.Dispatcher.CheckAccess())
-			//			LbStatusStrip.Content = message;
-			//		else
-			//			LbStatusStrip.Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
-			//	}
-			//	else
-			//		Dispatcher.Invoke(new Action<string>(SetTestingStatusText), message);
-			//}
-			//catch (Exception)
-			//{
-			//}
+			// TODO: fix
+			GUIHelpers.SetLabelText(this, /* LbTestingStatusStrip */ null, message);
 		}
 
 		private void SetReadCyclesCountText(ulong cycles)
 		{
-			//try
-			//{
-			//	if (Dispatcher.CheckAccess())
-			//	{
-			//		if (LbReadCyclesStrip.Dispatcher.CheckAccess())
-			//			LbReadCyclesStrip.Content = cycles;
-			//		else
-			//			LbReadCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetReadCyclesCountText), cycles);
-			//	}
-			//	else
-			//		Dispatcher.Invoke(new Action<ulong>(SetReadCyclesCountText), cycles);
-			//}
-			//catch (Exception)
-			//{
-			//}
+			//TODO: fix
+			GUIHelpers.SetLabelText(this, /* LbReadCyclesStrip */ null, cycles.ToString());
 		}
 
 		private void SetWriteCyclesCountText(ulong cycles)
 		{
-			//try
-			//{
-			//	if (Dispatcher.CheckAccess())
-			//	{
-			//		if (LbWriteCyclesStrip.Dispatcher.CheckAccess())
-			//			LbWriteCyclesStrip.Content = cycles;
-			//		else
-			//			LbWriteCyclesStrip.Dispatcher.Invoke(new Action<ulong>(SetWriteCyclesCountText), cycles);
-			//	}
-			//	else
-			//		Dispatcher.Invoke(new Action<ulong>(SetWriteCyclesCountText), cycles);
-			//}
-			//catch (Exception)
-			//{
-			//}
+			//TODO: fix
+			GUIHelpers.SetLabelText(this,/* LbWriteCyclesStrip */ null, cycles.ToString());
 		}
 
 		private void SetTaskbarStatus(TaskbarItemProgressState state, double value)
 		{
-			//try
-			//{
-			//	if (Dispatcher.CheckAccess())
-			//	{
-			//		if (TaskbarItemInfo.Dispatcher.CheckAccess())
-			//		{
-			//			TaskbarItemInfo.ProgressState = state;
-			//			TaskbarItemInfo.ProgressValue = value;
-			//		}
-			//		else
-			//			LbWriteCyclesStrip.Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
-			//	}
-			//	else
-			//		Dispatcher.Invoke(new Action<TaskbarItemProgressState, double>(SetTaskbarStatus), state, value);
-			//}
-			//catch (Exception)
-			//{
-			//}
+			GUIHelpers.SetWindowTaskbarStatus(this, state, value);
 		}
 
 		private void SetCurrentFileText(string filepath)
 		{
-			//try
-			//{
-			//	if (Dispatcher.CheckAccess())
-			//	{
-			//		if (LbCurrFileStrip.Dispatcher.CheckAccess())
-			//			LbCurrFileStrip.Content = filepath;
-			//		else
-			//			LbCurrFileStrip.Dispatcher.Invoke(new Action<string>(SetCurrentFileText), filepath);
-			//	}
-			//	else
-			//		Dispatcher.Invoke(new Action<string>(SetCurrentFileText), filepath);
-			//}
-			//catch (Exception)
-			//{
-			//}
+			//TODO: fix
+			GUIHelpers.SetLabelText(this,/* LbCurrFileStrip */ null, filepath);
+		}
+
+		private void PopulateComboboxes()
+		{
+			CbRewritePeriod.Items.Add("Раз в 10 минут");
+			CbRewritePeriod.Items.Add("Раз в час");
+			CbRewritePeriod.Items.Add("Раз в 3 часа");
+			CbRewritePeriod.Items.Add("Раз в 6 часов");
+			CbRewritePeriod.Items.Add("Раз в 12 часов");
+			CbRewritePeriod.Items.Add("Раз в сутки");
+			CbRewritePeriod.Items.Add("Раз в двое суток");
+			CbRewritePeriod.Items.Add("Раз в трое суток");
+			CbRewritePeriod.Items.Add("Раз в неделю");
+
+			//CbDrives.SelectedIndex = 0;
+			CbRewritePeriod.SelectedIndex = 2;
 		}
 
 		private void SetStartStopButtonLabel(bool start)
@@ -410,19 +323,15 @@ namespace DriveErrorTest
 			//_driveTester.OnTestingStatusChanged -= OnTestingStatusChangedEventHandler;
 		}
 
-		//private bool IsTesterRunning()
-		//{
-		//	//if (_driveTester == null || !_driveTester.IsRunning)
-		//	//	return false;
-
-		//	//return true;
-		//}
+		private void DisposeComponents()
+		{
+			_driveManager.StopAllTests();
+			_systemTrayHelper?.Dispose();
+		}
 
 		private void ExitApp()
 		{
-			//if (IsTesterRunning())
-			//	StopTest();
-			_systemTrayHelper?.Dispose();
+			DisposeComponents();
 			// TODO: exit more gracefully than that
 			Environment.Exit(0);
 		}
@@ -488,18 +397,15 @@ namespace DriveErrorTest
 
 		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
 		{
-			//if (File.Exists(_logPath))
-			//	Process.Start(_logPath);
+			// TODO: fix this.
+			//_driveManager.ShowLogSelected(-1);
 		}
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
-			//if (_driveTester != null && _driveTester.IsRunning &&
-			//    MessageBox.Show(
-			//	    "Вы действительно хотите прервать тестирование?",
-			//	    "Подтвердите действие",
-			//	    MessageBoxButton.YesNo,
-			//	    MessageBoxImage.Question) == MessageBoxResult.No)
+			Visibility = Visibility.Hidden;
+			e.Cancel = true;
+			//if (_driveTester != null && _driveTester.IsRunning && AskToConfirmTestAbortion())
 			//{
 			//	e.Cancel = true;
 			//	return;
@@ -510,18 +416,45 @@ namespace DriveErrorTest
 			//	StopTest();
 			//	TerminateTestingThread();
 			//}
+		}
 
-			//ExitApp();
+		private bool AskToConfirmTestAbortion()
+		{
+			return MessageBox.Show(
+					"Вы действительно хотите прервать тестирование?",
+					"Подтвердите действие",
+					MessageBoxButton.YesNo,
+					MessageBoxImage.Question) == MessageBoxResult.Yes;
+		}
+
+		private bool AskToConfirmExit()
+		{
+			return MessageBox.Show(
+				"Вы действительно хотите выйти?",
+				"Завершение тестирования",
+				MessageBoxButton.YesNo,
+				MessageBoxImage.Question) == MessageBoxResult.Yes;
 		}
 
 		private void MenuItem_OnClick(object sender, RoutedEventArgs e)
 		{
-			ExitApp();
+			if (AskToConfirmExit())
+				ExitApp();
+		}
+
+		private void BtStart_Click(object sender, RoutedEventArgs e)
+		{
+
 		}
 
 		private void BtPausehTesting_OnClick(object sender, RoutedEventArgs e)
 		{
-			
+
+		}
+
+		private void BtStop_Click(object sender, RoutedEventArgs e)
+		{
+
 		}
 	}
 }
