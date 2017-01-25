@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -15,21 +11,16 @@ namespace DriveErrorTest
 	/// </summary>
 	public partial class MainWindow
 	{
-		private string _sourcePath = "";
-		private string _logPath = "";
-		private Thread _testingThread;
-		private Tester _tester; 
 		private SystemTrayHelper _systemTrayHelper;
+		private DriveManager _driveManager;
 
 		public MainWindow()
 		{
 			InitializeComponent();
-			Initialize();
+			InitializeAppLogic();
 		}
 
-		public ObservableCollection<DriveInfo> Drives { get; set; }
-
-		private void Initialize()
+		private void InitializeAppLogic()
 		{
 			if (!CheckIfMutexIsAvailable())
 			{
@@ -37,17 +28,14 @@ namespace DriveErrorTest
 				ExitApp();
 			}
 
-			SetupTrayIcon();
-
+			InitializeTrayIcon();
 			Title = GlobalContext.AppTitleTextBase;
-			Drives = new ObservableCollection<DriveInfo>();
 			TaskbarItemInfo = new TaskbarItemInfo();
-			GetDrivesList();
 
-			SetupComboBoxes();
+			InitializeDriveManager();
 		}
 
-		private bool CheckIfMutexIsAvailable()
+		private static bool CheckIfMutexIsAvailable()
 		{
 			bool wasMutexCreated;
 			new Mutex(true, "MutexForFDT", out wasMutexCreated);
@@ -55,12 +43,26 @@ namespace DriveErrorTest
 			return wasMutexCreated;
 		}
 
-		private void SetupTrayIcon()
+		private void InitializeTrayIcon()
 		{
 			_systemTrayHelper = new SystemTrayHelper();
 			_systemTrayHelper.Initialize();
 			_systemTrayHelper.ShowWindowEvent += SystemTrayHelper_ShowWindowEvent;
 			_systemTrayHelper.ShutAppDownEvent += SystemTrayHelper_ShutAppDownEvent;
+		}
+
+		private void InitializeDriveManager()
+		{
+			_driveManager = new DriveManager();
+			_driveManager.Initialize();
+		}
+
+		private void SystemTrayHelper_ShowWindowEvent()
+		{
+			if (IsVisible)
+				Visibility = Visibility.Hidden;
+			else
+				Visibility = Visibility.Visible;
 		}
 
 		private void SystemTrayHelper_ShutAppDownEvent()
@@ -84,98 +86,65 @@ namespace DriveErrorTest
 			//CbTimePeriod.SelectedIndex = 2;
 		}
 
-		private void SystemTrayHelper_ShowWindowEvent()
-		{
-			if (IsVisible)
-				Visibility = Visibility.Hidden;
-			else
-				Visibility = Visibility.Visible;
-		}
-
-		private void GetDrivesList()
-		{
-			//// TODO: bind combobox to collection
-			//Drives.Clear();
-			//CbDrives.Items.Clear();
-
-			//var drives = DriveInfo.GetDrives().Where(drive => drive.IsReady && drive.DriveType == DriveType.Removable);
-
-			//foreach (var drive in drives.Where(drive => drive.DriveType == DriveType.Removable))
-			//{
-			//	Drives.Add(drive);
-			//	CbDrives.Items.Add(drive.Name + drive.VolumeLabel);
-			//	SetGuiAccess(true);
-			//	BtStartStopTesting.IsEnabled = true;
-			//}
-
-			//if (!CbDrives.Items.IsEmpty)
-			//	return;
-
-			// CbDrives.Items.Add("<Съемные диски не найдены>");
-			//SetGuiAccess(false);
-			//BtStartStopTesting.IsEnabled = false;
-			//BtShowLog.IsEnabled = false;
-		}
-
 		private void SetGuiAccess(bool active)
 		{
-			//if (Dispatcher.CheckAccess())
-			//{
+			if (Dispatcher.CheckAccess())
+			{
 			//	CbTimePeriod.Dispatcher.Invoke(new Action(() => CbTimePeriod.IsEnabled = active));
 			//	CbDrives.Dispatcher.Invoke(new Action(() => CbDrives.IsEnabled = active));
 			//	BtSelectSourcePath.Dispatcher.Invoke(new Action(() => BtSelectSourcePath.IsEnabled = active));
 			//	BtSelectLogPath.Dispatcher.Invoke(new Action(() => BtSelectLogPath.IsEnabled = active));
 			//	CbCleanStart.Dispatcher.Invoke(new Action(() => CbCleanStart.IsEnabled = active));
-			//}
-			//else
-			//	Dispatcher.Invoke(new Action<bool>(SetGuiAccess), active);
+			}
+			else
+				Dispatcher.Invoke(new Action<bool>(SetGuiAccess), active);
 		}
 
 		private void BtSelectTestData_OnClick(object sender, RoutedEventArgs e)
 		{
-			//var dg = new System.Windows.Forms.FolderBrowserDialog();
+			var dg = new System.Windows.Forms.FolderBrowserDialog();
 
-			//if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-			//	return;
+			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+				return;
 
 			//_sourcePath = dg.SelectedPath;
 			//LbInputPath.Content = _sourcePath;
 		}
 
-		private bool ReadyToTest()
-		{
-			return Directory.Exists(_sourcePath) && File.Exists(_logPath);
-		}
+		//private bool ReadyToTest()
+		//{
+		//	//return Directory.Exists(_sourcePath) && File.Exists(_logPath);
+		//}
 
 		private void BtStartStopTesting_OnClick(object sender, RoutedEventArgs e)
 		{
-			if (_tester == null || !_tester.IsRunning)
-			{
-				if (ReadyToTest())
-				{
-					StartTest();
-				}
-				else
-				{
-					var message = "Не указаны следующие данные:";
-					if (!Directory.Exists(_sourcePath))
-						message += Environment.NewLine + "Путь к папке с исходными данными";
-					if (!File.Exists(_logPath))
-						message += Environment.NewLine + "Путь к журналу";
-					MessageBox.Show(message, "Не хватает данных", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-				}
-			}
-			else
-			{
-				if (MessageBox.Show(
-					"Вы действительно хотите прервать тестирование?",
-					"Подтвердите действие",
-					MessageBoxButton.YesNo,
-					MessageBoxImage.Question) == MessageBoxResult.Yes)
-				{
-					StopTest();
-				}
-			}
+			//if (_driveTester == null || !_driveTester.IsRunning)
+			//{
+			//	if (ReadyToTest())
+			//	{
+			//		StartTest();
+			//	}
+			//	else
+			//	{
+			//		var message = "Не указаны следующие данные:";
+			//		if (!Directory.Exists(_sourcePath))
+			//			message += Environment.NewLine + "Путь к папке с исходными данными";
+			//		if (!File.Exists(_logPath))
+			//			message += Environment.NewLine + "Путь к журналу";
+			//		MessageBox.Show(message, "Не хватает данных", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+			//	}
+			//}
+			//else
+			//{
+			//	if (MessageBox.Show(
+			//		"Вы действительно хотите прервать тестирование?",
+			//		"Подтвердите действие",
+			//		MessageBoxButton.YesNo,
+			//		MessageBoxImage.Question) == MessageBoxResult.Yes)
+			//	{
+			//		StopTest();
+			//	}
+			//}
 		}
 
 		private void StartTest()
@@ -215,8 +184,8 @@ namespace DriveErrorTest
 
 		private void TerminateTestingThread()
 		{
-			try { _testingThread.Abort(); }
-			catch { }
+			//try { _testingThread.Abort(); }
+			//catch { }
 		}
 
 		public void SetBackgroundColor(Color color)
@@ -419,42 +388,41 @@ namespace DriveErrorTest
 
 		private void SubscribeToTesterEvents()
 		{
-			if (_tester == null)
-				return;
+			//if (_driveTester == null)
+			//	return;
 
-			_tester.OnErrorCountChanged += OnErrorCountChangedEventHandler;
-			_tester.OnCurrentFileChanged += OnCurrentFileChangedEventHandler;
-			_tester.OnReadCyclesCountChanged += OnReadCyclesCountChangedEventHandler;
-			_tester.OnWriteCyclesCountChanged += OnWriteCyclesCountChangedEventHandler;
-			_tester.OnTestingStatusChanged += OnTestingStatusChangedEventHandler;
+			//_driveTester.OnErrorCountChanged += OnErrorCountChangedEventHandler;
+			//_driveTester.OnCurrentFileChanged += OnCurrentFileChangedEventHandler;
+			//_driveTester.OnReadCyclesCountChanged += OnReadCyclesCountChangedEventHandler;
+			//_driveTester.OnWriteCyclesCountChanged += OnWriteCyclesCountChangedEventHandler;
+			//_driveTester.OnTestingStatusChanged += OnTestingStatusChangedEventHandler;
 		}
 
 		private void UnsubscribeFromTesterEvents()
 		{
-			if (_tester == null)
-				return;
+			//if (_driveTester == null)
+			//	return;
 
-			_tester.OnErrorCountChanged -= OnErrorCountChangedEventHandler;
-			_tester.OnCurrentFileChanged -= OnCurrentFileChangedEventHandler;
-			_tester.OnReadCyclesCountChanged -= OnReadCyclesCountChangedEventHandler;
-			_tester.OnWriteCyclesCountChanged -= OnWriteCyclesCountChangedEventHandler;
-			_tester.OnTestingStatusChanged -= OnTestingStatusChangedEventHandler;
+			//_driveTester.OnErrorCountChanged -= OnErrorCountChangedEventHandler;
+			//_driveTester.OnCurrentFileChanged -= OnCurrentFileChangedEventHandler;
+			//_driveTester.OnReadCyclesCountChanged -= OnReadCyclesCountChangedEventHandler;
+			//_driveTester.OnWriteCyclesCountChanged -= OnWriteCyclesCountChangedEventHandler;
+			//_driveTester.OnTestingStatusChanged -= OnTestingStatusChangedEventHandler;
 		}
 
-		private bool IsTesterRunning()
-		{
-			if (_tester == null || !_tester.IsRunning)
-				return false;
+		//private bool IsTesterRunning()
+		//{
+		//	//if (_driveTester == null || !_driveTester.IsRunning)
+		//	//	return false;
 
-			return true;
-		}
+		//	//return true;
+		//}
 
 		private void ExitApp()
 		{
-			if (IsTesterRunning())
-				StopTest();
-			if (_systemTrayHelper != null)
-				_systemTrayHelper.Dispose();
+			//if (IsTesterRunning())
+			//	StopTest();
+			_systemTrayHelper?.Dispose();
 			// TODO: exit more gracefully than that
 			Environment.Exit(0);
 		}
@@ -481,26 +449,26 @@ namespace DriveErrorTest
 
 		private void OnErrorCountChangedEventHandler(int errorsCount)
 		{
-			if (errorsCount == 0)
-			{
-				SetTestingStatusText("ошибок не найдено...");
-				SetBackgroundColor(Color.FromRgb(191, 235, 171));
-				SetTaskbarStatus(TaskbarItemProgressState.Normal, 1);
-			}
-			else
-			{
-				if (errorsCount >= 100)
-				{
-					SetStartStopButtonLabel(true);
-					SetBackgroundColor(Color.FromRgb(162, 0, 0));
-					SetGuiAccess(true);
-					return;
-				}
+			//if (errorsCount == 0)
+			//{
+			//	SetTestingStatusText("ошибок не найдено...");
+			//	SetBackgroundColor(Color.FromRgb(191, 235, 171));
+			//	SetTaskbarStatus(TaskbarItemProgressState.Normal, 1);
+			//}
+			//else
+			//{
+			//	if (errorsCount >= 100)
+			//	{
+			//		SetStartStopButtonLabel(true);
+			//		SetBackgroundColor(Color.FromRgb(162, 0, 0));
+			//		SetGuiAccess(true);
+			//		return;
+			//	}
 
-				SetTestingStatusText($"обнаружено {_tester.ErrorsCount} ошибок");
-				SetBackgroundColor(Color.FromRgb(245, 105, 105));
-				SetTaskbarStatus(TaskbarItemProgressState.Error, 1);
-			}
+			//	SetTestingStatusText($"обнаружено {_driveTester.ErrorsCount} ошибок");
+			//	SetBackgroundColor(Color.FromRgb(245, 105, 105));
+			//	SetTaskbarStatus(TaskbarItemProgressState.Error, 1);
+			//}
 		}
 
 		private void BtSelectLogPath_OnClick(object sender, RoutedEventArgs e)
@@ -520,30 +488,30 @@ namespace DriveErrorTest
 
 		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
 		{
-			if (File.Exists(_logPath))
-				Process.Start(_logPath);
+			//if (File.Exists(_logPath))
+			//	Process.Start(_logPath);
 		}
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
-			if (_tester != null && _tester.IsRunning &&
-			    MessageBox.Show(
-				    "Вы действительно хотите прервать тестирование?",
-				    "Подтвердите действие",
-				    MessageBoxButton.YesNo,
-				    MessageBoxImage.Question) == MessageBoxResult.No)
-			{
-				e.Cancel = true;
-				return;
-			}
+			//if (_driveTester != null && _driveTester.IsRunning &&
+			//    MessageBox.Show(
+			//	    "Вы действительно хотите прервать тестирование?",
+			//	    "Подтвердите действие",
+			//	    MessageBoxButton.YesNo,
+			//	    MessageBoxImage.Question) == MessageBoxResult.No)
+			//{
+			//	e.Cancel = true;
+			//	return;
+			//}
 
-			if (_tester != null && _tester.IsRunning)
-			{
-				StopTest();
-				TerminateTestingThread();
-			}
+			//if (_driveTester != null && _driveTester.IsRunning)
+			//{
+			//	StopTest();
+			//	TerminateTestingThread();
+			//}
 
-			ExitApp();
+			//ExitApp();
 		}
 
 		private void MenuItem_OnClick(object sender, RoutedEventArgs e)

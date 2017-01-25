@@ -6,21 +6,32 @@
         mc:Ignorable="d"
         Title="Тестирование" SizeToContent="WidthAndHeight"
 		ResizeMode="CanMinimize"
-		Background="White" Closing="Window_Closing" Icon="Firstfear-Whistlepuff-Usb.ico" >
+		Background="White" Closing="Window_Closing" Icon="res/Firstfear-Whistlepuff-Usb.ico" >
 	<StackPanel>
 		<Menu>
-			<MenuItem Header="Файл">
-				<MenuItem Name="BtShowLog" Header="Открыть лог" Click="BtShowLog_OnClick"></MenuItem>
+			<MenuItem Header="Действия">
+				<MenuItem Name="BtStartAllDrives" Header="Запустить все"/>
+				<MenuItem Name="BtStopAllDrives" Header="Остановить все"/>
 				<Separator/>
 				<MenuItem Header="Выход" Click="MenuItem_OnClick"></MenuItem>
 			</MenuItem>
 		</Menu>
-
-		<DataGrid>
+		<StackPanel Orientation="Horizontal">
+			<Button HorizontalAlignment="Center" VerticalAlignment="Center">
+				<Image Source="res\Play-48.png" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="15" MaxHeight="15"  />
+			</Button>
+			<Button HorizontalAlignment="Center" VerticalAlignment="Center">
+				<Image Source="res\Pause-48.png" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="15" MaxHeight="15"  />
+			</Button>
+			<Button HorizontalAlignment="Center" VerticalAlignment="Center">
+				<Image Source="res\Stop-48.png" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="15" MaxHeight="15"  />
+			</Button>
+		</StackPanel>
+		<DataGrid Name="GrDrives">
 			<DataGrid.Columns>
-				<DataGridTextColumn Header="Состояние"/>
 				<DataGridTextColumn Header="Наименование"/>
 				<DataGridTextColumn Header="Статус"/>
+				<DataGridTextColumn Header="Действие"/>
 			</DataGrid.Columns>
 			
 		</DataGrid>

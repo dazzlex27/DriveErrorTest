@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DriveErrorTest
 {
-	internal class Logger
+	public class Logger
 	{
 		private enum EventType
 		{
@@ -13,7 +13,7 @@ namespace DriveErrorTest
 			Exception
 		}
 
-		private FileInfo _fileInfo;
+		private readonly FileInfo _fileInfo;
 
 		public Logger(string path)
 		{

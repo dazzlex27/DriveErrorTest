@@ -41,7 +41,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Firstfear-Whistlepuff-Usb.ico</ApplicationIcon>
+    <ApplicationIcon>res\Firstfear-Whistlepuff-Usb.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>DriveErrorTest.App</StartupObject>
@@ -67,10 +67,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DriveInfoStorage.cs" />
+    <Compile Include="DriveManager.cs" />
+    <Compile Include="DriveTesterSettings.cs" />
     <Compile Include="GlobalContext.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="SystemTrayHelper.cs" />
-    <Compile Include="Tester.cs" />
+    <Compile Include="DriveTester.cs" />
     <Compile Include="Utilities.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -123,7 +126,25 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Firstfear-Whistlepuff-Usb.ico" />
+    <Resource Include="res\Firstfear-Whistlepuff-Usb.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="res\Pause-48.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="res\Play-48.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="res\Stop-48.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="res\Pause-48 hl.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="res\Play-48 hl.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="res\Stop-48 hl.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
