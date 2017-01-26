@@ -20,6 +20,8 @@ namespace DriveErrorTest
 			DriveList = new ObservableCollection<DriveInfoStorage>();
 			PopulateDriveList();
 
+			CommonLogger.CreateDriveLogFiles(DriveList);
+
 			InitializeStartQueue();
 		}
 

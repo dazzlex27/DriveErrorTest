@@ -83,8 +83,9 @@ namespace DriveErrorTest
 				{
 					var folderName = drive.Name.Replace(":\\", "_");
 					var directory = Path.Combine(_loggingPath, "Drive logs", folderName);
-					Directory.CreateDirectory(folderName);
+					Directory.CreateDirectory(directory);
 					drive.Settings.Log = new Logger(Path.Combine(directory, folderName + ".txt"));
+					File.Create(drive.Settings.Log.Path);
 				}
 				catch (Exception ex)
 				{

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -7,6 +7,28 @@ using System.Security.Permissions;
 
 namespace DriveErrorTest
 {
+	public enum TestingStatus
+	{
+		[Description("Неактивен")]
+		NotActive,
+		[Description("Готов")]
+		StandBy,
+		[Description("В очереди")]
+		Pending,
+		[Description("Форматируется")]
+		Formatting,
+		[Description("Ошибок нет")]
+		NoErrorsFound,
+		[Description("Есть ошибки")]
+		ErrorsFound,
+		[Description("Крит. ошибка")]
+		Fatal,
+		[Description("Пауза")]
+		Paused,
+		[Description("Остановлен")]
+		Stopped
+	}
+
 	public static class Utilities
 	{
 		public static bool FormatDriveWithCmd(string driveName, string volumeLabel, bool useQuickFormat = true)

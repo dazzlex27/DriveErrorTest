@@ -3,16 +3,6 @@ using System.Threading;
 
 namespace DriveErrorTest
 {
-	public enum TestingStatus
-	{
-		NotActive,
-		Pending,
-		NoErrorsFound,
-		ErrorsFound,
-		Fatal,
-		Paused
-	}
-
 	public class DriveInfoStorage
 	{
 		private readonly DriveInfo _drive;
@@ -24,11 +14,17 @@ namespace DriveErrorTest
 		public DriveInfoStorage(DriveInfo drive)
 		{
 			_drive = drive;
+			Name = drive.Name + drive.VolumeLabel;
+			Settings = new DriveTesterSettings();
 		}
 
-		public string Name { get; set; }
+		public string Name { get; private set; }
 
-		public TestingStatus HealthStatus { get; set; }
+		public TestingStatus HealthStatus { get; private set; }
+
+		public int WriteCycles { get; private set; }
+
+		public int ReadCycles { get; private set; }
 
 		public DriveInfo GetDeviceInfo()
 		{

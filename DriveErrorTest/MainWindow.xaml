@@ -6,7 +6,8 @@
         mc:Ignorable="d"
         Title="Тестирование" SizeToContent="WidthAndHeight"
 		ResizeMode="CanMinimize"
-		Background="White" Closing="Window_Closing" Icon="res/Firstfear-Whistlepuff-Usb.ico" WindowStartupLocation="CenterScreen" >
+		Background="White" Closing="Window_Closing" Icon="res/Firstfear-Whistlepuff-Usb.ico" WindowStartupLocation="CenterScreen">
+	
 	<StackPanel>
 		<Menu>
 			<MenuItem Header="Меню">
@@ -34,12 +35,7 @@
 				<ColumnDefinition Width="210"/>
 			</Grid.ColumnDefinitions>
 
-			<DataGrid Name="GrDrives">
-				<DataGrid.Columns>
-					<DataGridTextColumn Header="Наименование"/>
-					<DataGridTextColumn Header="Статус"/>
-					<DataGridTextColumn Header="Действие"/>
-				</DataGrid.Columns>
+			<DataGrid Name="GrDrives" AutoGeneratingColumn="GrDrives_AutoGeneratingColumn">
 			</DataGrid>
 
 			<StackPanel Grid.Column="1" Margin="3,0,3,3">

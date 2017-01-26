@@ -161,13 +161,10 @@ namespace DriveErrorTest
 
 		private void PopulateDriveGrid()
 		{
+			GrDrives.ItemsSource = _driveManager.DriveList;
+
 			if (_driveManager.DriveList.Count == 0)
 				return;
-
-			foreach (var drive in _driveManager.DriveList)
-			{
-				// TODO: finish this
-			}
 
 			GrDrives.SelectedIndex = 0;
 		}
@@ -384,8 +381,11 @@ namespace DriveErrorTest
 		{
 			if (GrDrives.SelectedIndex >= 0)
 			{
-				if (AskToConfirmTestAbortion())
-					_driveManager.StopTest(GrDrives.SelectedIndex);
+				if (_driveManager.TestsRunning)
+				{
+					if (AskToConfirmTestAbortion())
+						_driveManager.StopTest(GrDrives.SelectedIndex);
+				}
 			}
 		}
 
@@ -393,7 +393,7 @@ namespace DriveErrorTest
 		{
 			if (_driveManager.TestsRunning)
 			{
-				if (AskToConfirmExit())
+				if (AskToConfirmTestAbortion())
 					return true;
 			}
 			else
@@ -403,6 +403,12 @@ namespace DriveErrorTest
 			}
 
 			return false;
+		}
+
+		private void GrDrives_AutoGeneratingColumn(object sender, System.Windows.Controls.DataGridAutoGeneratingColumnEventArgs e)
+		{
+			if (e.PropertyName == "Settings")
+				e.Cancel = true;
 		}
 	}
 }
