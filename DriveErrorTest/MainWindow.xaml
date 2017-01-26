@@ -11,7 +11,7 @@
 		<Menu>
 			<MenuItem Header="Меню">
 				<MenuItem Name="BtStartAllDrives" Header="Запустить все"/>
-				<MenuItem Name="BtStopAllDrives" Header="Остановить все"/>
+				<MenuItem Name="BtStopAllDrives" Header="Остановить все" Click="BtStopAllDrives_OnClick"/>
 				<Separator/>
 				<MenuItem Header="Выход" Click="MenuItem_OnClick"></MenuItem>
 			</MenuItem>

@@ -29,11 +29,17 @@ namespace DriveErrorTest
 			}
 
 			InitializeTrayIcon();
+
+			CommonLogger.Initialize();
+
 			Title = GlobalContext.AppTitleTextBase;
 			TaskbarItemInfo = new TaskbarItemInfo();
 			PopulateComboboxes();
 
 			InitializeDriveManager();
+
+			if (_driveManager.DriveList.Count == 0)
+				SetGuiAccess(false);
 		}
 
 		private static bool CheckIfMutexIsAvailable()
@@ -76,11 +82,10 @@ namespace DriveErrorTest
 		{
 			if (Dispatcher.CheckAccess())
 			{
-			//	CbTimePeriod.Dispatcher.Invoke(new Action(() => CbTimePeriod.IsEnabled = active));
-			//	CbDrives.Dispatcher.Invoke(new Action(() => CbDrives.IsEnabled = active));
-			//	BtSelectSourcePath.Dispatcher.Invoke(new Action(() => BtSelectSourcePath.IsEnabled = active));
-			//	BtSelectLogPath.Dispatcher.Invoke(new Action(() => BtSelectLogPath.IsEnabled = active));
-			//	CbCleanStart.Dispatcher.Invoke(new Action(() => CbCleanStart.IsEnabled = active));
+				CbRewritePeriod.Dispatcher.Invoke(new Action(() => CbRewritePeriod.IsEnabled = active));
+				BtSelectSourcePath.Dispatcher.Invoke(new Action(() => BtSelectSourcePath.IsEnabled = active));
+				BtShowLog.Dispatcher.Invoke(new Action(() => BtShowLog.IsEnabled = active));
+				CbCleanStart.Dispatcher.Invoke(new Action(() => CbCleanStart.IsEnabled = active));
 			}
 			else
 				Dispatcher.Invoke(new Action<bool>(SetGuiAccess), active);
@@ -97,8 +102,10 @@ namespace DriveErrorTest
 			LbInputPath.Content = _driveManager.SourceDirectory.FullName;
 		}
 
-		private void BtStartStopTesting_OnClick(object sender, RoutedEventArgs e)
+		private void BtStopAllDrives_OnClick(object sender, RoutedEventArgs e)
 		{
+			if (AskToConfirmTestAbortion())
+				_driveManager.StopAllTests();
 			//if (_driveTester == null || !_driveTester.IsRunning)
 			//{
 			//	if (ReadyToTest())
@@ -211,27 +218,6 @@ namespace DriveErrorTest
 
 			//CbDrives.SelectedIndex = 0;
 			CbRewritePeriod.SelectedIndex = 2;
-		}
-
-		private void SetStartStopButtonLabel(bool start)
-		{
-			//try
-			//{
-			//	if (Dispatcher.CheckAccess())
-			//	{
-			//		if (BtStartStopTesting.Dispatcher.CheckAccess())
-			//		{
-			//			BtStartStopTesting.Content = start ? "Начать" : "Остановить";
-			//		}
-			//		else
-			//			LbCurrFileStrip.Dispatcher.Invoke(new Action<bool>(SetStartStopButtonLabel), start);
-			//	}
-			//	else
-			//		Dispatcher.Invoke(new Action<bool>(SetStartStopButtonLabel), start);
-			//}
-			//catch (Exception)
-			//{
-			//}
 		}
 
 		public static int GetSelectedIndex(System.Windows.Controls.ComboBox combobox)
@@ -397,28 +383,17 @@ namespace DriveErrorTest
 
 		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
 		{
-			// TODO: fix this.
-			//_driveManager.ShowLogSelected(-1);
+			if (GrDrives.SelectedIndex >= 0)
+				_driveManager.ShowLogSelected(GrDrives.SelectedIndex);
 		}
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
 			Visibility = Visibility.Hidden;
 			e.Cancel = true;
-			//if (_driveTester != null && _driveTester.IsRunning && AskToConfirmTestAbortion())
-			//{
-			//	e.Cancel = true;
-			//	return;
-			//}
-
-			//if (_driveTester != null && _driveTester.IsRunning)
-			//{
-			//	StopTest();
-			//	TerminateTestingThread();
-			//}
 		}
 
-		private bool AskToConfirmTestAbortion()
+		private static bool AskToConfirmTestAbortion()
 		{
 			return MessageBox.Show(
 					"Вы действительно хотите прервать тестирование?",
@@ -427,7 +402,7 @@ namespace DriveErrorTest
 					MessageBoxImage.Question) == MessageBoxResult.Yes;
 		}
 
-		private bool AskToConfirmExit()
+		private static bool AskToConfirmExit()
 		{
 			return MessageBox.Show(
 				"Вы действительно хотите выйти?",
