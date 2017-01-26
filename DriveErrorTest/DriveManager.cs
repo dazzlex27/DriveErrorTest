@@ -13,6 +13,8 @@ namespace DriveErrorTest
 
 		public DirectoryInfo SourceDirectory { get; set; }
 
+		public bool TestsRunning { get; private set; }
+
 		public void Initialize()
 		{
 			DriveList = new ObservableCollection<DriveInfoStorage>();
@@ -64,6 +66,42 @@ namespace DriveErrorTest
 
 			if (File.Exists(path))
 				Process.Start(path);
+		}
+
+
+		private void StartTest()
+		{
+			//try
+			//{
+			//	Title = GlobalContext.AppTitleTextBase + " - " + Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
+			//	_testingThread = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
+			//	_testingThread.Start();
+			//	SetGuiAccess(false);
+			//	SetStartStopButtonLabel(false);
+			//	SetTestingStatusText("запущено");
+			//	BtPausehTesting.Visibility = Visibility.Visible;
+			//	SetGuiAccess(false);
+			//}
+			//catch (Exception)
+			//{
+			//	MessageBox.Show(
+			//		"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства и файла журнала",
+			//		"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+			//}
+		}
+
+		private void StopTest()
+		{
+			//UnsubscribeFromTesterEvents();
+			//_tester.StopTest();
+			//do { } while (_tester.IsRunning);
+			//SetStartStopButtonLabel(true);
+			//SetTestingStatusText("остановлено");
+			//SetBackgroundColor(Color.FromRgb(255, 255, 255));
+			//SetTaskbarStatus(TaskbarItemProgressState.None, 0);
+			//BtPausehTesting.Visibility = Visibility.Hidden;
+			//SetCurrentFileText(" ");
+			//SetGuiAccess(true);
 		}
 	}
 }

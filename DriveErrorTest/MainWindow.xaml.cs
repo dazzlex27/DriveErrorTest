@@ -40,6 +40,8 @@ namespace DriveErrorTest
 
 			if (_driveManager.DriveList.Count == 0)
 				SetGuiAccess(false);
+
+			PopulateDriveGrid();
 		}
 
 		private static bool CheckIfMutexIsAvailable()
@@ -74,7 +76,7 @@ namespace DriveErrorTest
 
 		private void SystemTrayHelper_ShutAppDownEvent()
 		{
-			if (AskToConfirmExit())
+			if (AskBeforeExit())
 				ExitApp();
 		}
 
@@ -106,68 +108,6 @@ namespace DriveErrorTest
 		{
 			if (AskToConfirmTestAbortion())
 				_driveManager.StopAllTests();
-			//if (_driveTester == null || !_driveTester.IsRunning)
-			//{
-			//	if (ReadyToTest())
-			//	{
-			//		StartTest();
-			//	}
-			//	else
-			//	{
-			//		var message = "Не указаны следующие данные:";
-			//		if (!Directory.Exists(_sourcePath))
-			//			message += Environment.NewLine + "Путь к папке с исходными данными";
-			//		if (!File.Exists(_logPath))
-			//			message += Environment.NewLine + "Путь к журналу";
-			//		MessageBox.Show(message, "Не хватает данных", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-			//	}
-			//}
-			//else
-			//{
-			//	if (MessageBox.Show(
-			//		"Вы действительно хотите прервать тестирование?",
-			//		"Подтвердите действие",
-			//		MessageBoxButton.YesNo,
-			//		MessageBoxImage.Question) == MessageBoxResult.Yes)
-			//	{
-			//		StopTest();
-			//	}
-			//}
-		}
-
-		private void StartTest()
-		{
-			//try
-			//{
-			//	Title = GlobalContext.AppTitleTextBase + " - " + Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
-			//	_testingThread = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
-			//	_testingThread.Start();
-			//	SetGuiAccess(false);
-			//	SetStartStopButtonLabel(false);
-			//	SetTestingStatusText("запущено");
-			//	BtPausehTesting.Visibility = Visibility.Visible;
-			//	SetGuiAccess(false);
-			//}
-			//catch (Exception)
-			//{
-			//	MessageBox.Show(
-			//		"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства и файла журнала",
-			//		"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-			//}
-		}
-
-		private void StopTest()
-		{
-			//UnsubscribeFromTesterEvents();
-			//_tester.StopTest();
-			//do { } while (_tester.IsRunning);
-			//SetStartStopButtonLabel(true);
-			//SetTestingStatusText("остановлено");
-			//SetBackgroundColor(Color.FromRgb(255, 255, 255));
-			//SetTaskbarStatus(TaskbarItemProgressState.None, 0);
-			//BtPausehTesting.Visibility = Visibility.Hidden;
-			//SetCurrentFileText(" ");
-			//SetGuiAccess(true);
 		}
 
 		public void SetBackgroundColor(Color color)
@@ -216,8 +156,20 @@ namespace DriveErrorTest
 			CbRewritePeriod.Items.Add("Раз в трое суток");
 			CbRewritePeriod.Items.Add("Раз в неделю");
 
-			//CbDrives.SelectedIndex = 0;
 			CbRewritePeriod.SelectedIndex = 2;
+		}
+
+		private void PopulateDriveGrid()
+		{
+			if (_driveManager.DriveList.Count == 0)
+				return;
+
+			foreach (var drive in _driveManager.DriveList)
+			{
+				// TODO: finish this
+			}
+
+			GrDrives.SelectedIndex = 0;
 		}
 
 		public static int GetSelectedIndex(System.Windows.Controls.ComboBox combobox)
@@ -234,7 +186,7 @@ namespace DriveErrorTest
 				return checkBox.IsChecked;
 
 			return
-				(bool?) checkBox.Dispatcher.Invoke(new Func<System.Windows.Controls.CheckBox, bool?>(GetCheckBoxValue), checkBox);
+				(bool?)checkBox.Dispatcher.Invoke(new Func<System.Windows.Controls.CheckBox, bool?>(GetCheckBoxValue), checkBox);
 		}
 
 		private void CreateTester(int periodValue, bool cleanStart)
@@ -366,21 +318,6 @@ namespace DriveErrorTest
 			//}
 		}
 
-		private void BtSelectLogPath_OnClick(object sender, RoutedEventArgs e)
-		{
-			//var dg = new System.Windows.Forms.OpenFileDialog
-			//{
-			//	Filter = "Текстовые файлы (*.txt)|*.txt|Файлы CSV (*.csv)|*.csv|Все доступные форматы|*.txt;*.csv"
-			//};
-
-			//if (dg.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
-			//	return;
-
-			//_logPath = dg.FileName;
-			//LbLogPath.Content = _logPath;
-			//BtShowLog.IsEnabled = true;
-		}
-
 		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (GrDrives.SelectedIndex >= 0)
@@ -413,25 +350,34 @@ namespace DriveErrorTest
 
 		private void MenuItem_OnClick(object sender, RoutedEventArgs e)
 		{
-			if (AskToConfirmExit())
+			if (AskBeforeExit())
 				ExitApp();
 		}
 
 		private void BtStart_Click(object sender, RoutedEventArgs e)
 		{
-			if (GrDrives.SelectedIndex >= 0)
+			if (_driveManager.SourceDirectory != null)
 			{
 				if (GrDrives.SelectedIndex >= 0)
-					_driveManager.StartTest(GrDrives.SelectedIndex);
+				{
+					if (GrDrives.SelectedIndex >= 0)
+						_driveManager.StartTest(GrDrives.SelectedIndex);
+				}
+			}
+			else
+			{
+				MessageBox.Show(
+					"Не указана папка-источник данных!",
+					"Невозможно запустить тестирование",
+					MessageBoxButton.OK,
+					MessageBoxImage.Exclamation);
 			}
 		}
 
 		private void BtPausehTesting_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (GrDrives.SelectedIndex >= 0)
-			{
-
-			}
+				_driveManager.PauseTest(GrDrives.SelectedIndex);
 		}
 
 		private void BtStop_Click(object sender, RoutedEventArgs e)
@@ -441,6 +387,22 @@ namespace DriveErrorTest
 				if (AskToConfirmTestAbortion())
 					_driveManager.StopTest(GrDrives.SelectedIndex);
 			}
+		}
+
+		private bool AskBeforeExit()
+		{
+			if (_driveManager.TestsRunning)
+			{
+				if (AskToConfirmExit())
+					return true;
+			}
+			else
+			{
+				if (AskToConfirmExit())
+					return true;
+			}
+
+			return false;
 		}
 	}
 }
