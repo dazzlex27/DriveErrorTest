@@ -35,20 +35,21 @@ namespace DriveErrorTest
 			return _drive;
 		}
 
-		public void StartTest(bool cleanStart)
+		public void StartTest()
 		{
-			_testerThread = new Thread(() => LaunchTestingThread(cleanStart));
+			_testerThread = new Thread(() => LaunchTestingThread());
 			_testerThread.Start();
 		}
 
-		private void LaunchTestingThread(bool cleanStart)
+		private void LaunchTestingThread()
 		{
-			_tester = new DriveTester(_drive, Settings)
-			{
-				CleanStart = cleanStart
-			};
-
+			_tester = new DriveTester(_drive, Settings);
 			_tester.RunTest();
+		}
+
+		public void PauseTest()
+		{
+
 		}
 
 		public void StopTest(bool force)

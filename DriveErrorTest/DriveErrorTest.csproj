@@ -76,6 +76,7 @@
     <Compile Include="Logger.cs" />
     <Compile Include="SystemTrayHelper.cs" />
     <Compile Include="DriveTester.cs" />
+    <Compile Include="TestStartQueue.cs" />
     <Compile Include="Utilities.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

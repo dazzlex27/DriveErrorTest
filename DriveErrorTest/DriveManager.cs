@@ -7,6 +7,8 @@ namespace DriveErrorTest
 {
 	class DriveManager
 	{
+		private TestStartQueue _startQueue;
+
 		public ObservableCollection<DriveInfoStorage> DriveList { get; set; }
 
 		public DirectoryInfo SourceDirectory { get; set; }
@@ -15,6 +17,8 @@ namespace DriveErrorTest
 		{
 			DriveList = new ObservableCollection<DriveInfoStorage>();
 			PopulateDriveList();
+
+			InitializeStartQueue();
 		}
 
 		private void PopulateDriveList()
@@ -27,20 +31,31 @@ namespace DriveErrorTest
 				DriveList.Add(new DriveInfoStorage(drive));
 		}
 
-		public void StartTest(int index, bool cleanStart = false)
+		private void InitializeStartQueue()
 		{
-			DriveList[index].StartTest(cleanStart);
+			_startQueue = new TestStartQueue();
+			_startQueue.Initialize(1800000);
 		}
 
-		public void StartTest(DriveInfoStorage drive, bool cleanStart = false)
+		public void StartTest(int index)
 		{
-			DriveList[DriveList.IndexOf(drive)].StartTest(cleanStart);
+			_startQueue.Add(DriveList[index]);
 		}
 
-		public void StopAllTests()
+		public void PauseTest(int index)
+		{
+			DriveList[index].PauseTest();
+		}
+
+		public void StopTest(int index, bool force = false)
+		{
+			DriveList[index].StopTest(force);
+		}
+
+		public void StopAllTests(bool force = false)
 		{
 			foreach (var drive in DriveList)
-				drive.StopTest(false);
+				drive.StopTest(force);
 		}
 
 		public void ShowLogSelected(int selectedIndex)

@@ -23,8 +23,6 @@ namespace DriveErrorTest
 
 		public bool IsRunning { get; private set; }
 
-		public bool CleanStart { get; set; }
-
 		public int ErrorsCount
 		{
 			get { return _errorsCount; }
@@ -99,7 +97,7 @@ namespace DriveErrorTest
 			try
 			{
 
-				if (CleanStart)
+				if (_settings.CleanStart)
 				{
 					do
 					{

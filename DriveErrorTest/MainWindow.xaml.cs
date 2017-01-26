@@ -419,17 +419,28 @@ namespace DriveErrorTest
 
 		private void BtStart_Click(object sender, RoutedEventArgs e)
 		{
-
+			if (GrDrives.SelectedIndex >= 0)
+			{
+				if (GrDrives.SelectedIndex >= 0)
+					_driveManager.StartTest(GrDrives.SelectedIndex);
+			}
 		}
 
 		private void BtPausehTesting_OnClick(object sender, RoutedEventArgs e)
 		{
+			if (GrDrives.SelectedIndex >= 0)
+			{
 
+			}
 		}
 
 		private void BtStop_Click(object sender, RoutedEventArgs e)
 		{
-
+			if (GrDrives.SelectedIndex >= 0)
+			{
+				if (AskToConfirmTestAbortion())
+					_driveManager.StopTest(GrDrives.SelectedIndex);
+			}
 		}
 	}
 }

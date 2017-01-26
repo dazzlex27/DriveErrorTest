@@ -6,23 +6,28 @@ namespace DriveErrorTest
 	public class DriveTesterSettings
 	{
 		/// <summary>
+		/// Indicates whether the drive needs to be formatted prior to starting tests
+		/// </summary>
+		public bool CleanStart;
+
+		/// <summary>
 		/// How often the drive is formatted and data is rewritten on it
 		/// </summary>
-		public TimeSpan RewritePeriod { get; set; }
+		public TimeSpan RewritePeriod;
 
 		/// <summary>
 		/// How many recovery attempts the tester will make
 		/// </summary>
-		public uint RecoveryAttempts { get; set; }
+		public uint RecoveryAttempts;
 
 		/// <summary>
 		/// Source data folder 
 		/// </summary>
-		public DirectoryInfo SourceDirectory { get; set; }
+		public DirectoryInfo SourceDirectory;
 
 		/// <summary>
 		/// Path to the target log file (1 per tester) 
 		/// </summary>
-		public Logger Log { get; set; }
+		public Logger Log;
 	}
 }
