@@ -8,10 +8,20 @@ namespace DriveErrorTest
 	class DriveManager
 	{
 		private TestStartQueue _startQueue;
+		private DirectoryInfo _sourceDirectory;
 
 		public ObservableCollection<DriveInfoStorage> DriveList { get; set; }
 
-		public DirectoryInfo SourceDirectory { get; set; }
+		public DirectoryInfo SourceDirectory
+		{
+			get { return _sourceDirectory; }
+			set
+			{
+				_sourceDirectory = value;
+				foreach (var drive in DriveList)
+					drive.Settings.SourceDirectory = _sourceDirectory;
+			}
+		}
 
 		public bool TestsRunning { get; private set; }
 
@@ -38,72 +48,56 @@ namespace DriveErrorTest
 		private void InitializeStartQueue()
 		{
 			_startQueue = new TestStartQueue();
-			_startQueue.Initialize(1800000);
+			_startQueue.Initialize(1200000);
 		}
 
-		public void StartTest(int index)
+		public void StartTest(object item)
 		{
-			_startQueue.Add(DriveList[index]);
+			var temp = item as DriveInfoStorage;
+			if (temp.HealthStatus != TestingStatus.Paused)
+			{
+				_startQueue.Add(DriveList[DriveList.IndexOf(temp)]);
+				DriveList[DriveList.IndexOf(temp)].SetHealthStatus(TestingStatus.Pending);
+				TestsRunning = true;
+			}
+			else
+				temp.ResumeTest();
 		}
 
-		public void PauseTest(int index)
+		public void PauseTest(object item)
 		{
-			DriveList[index].PauseTest();
+			var temp = item as DriveInfoStorage;
+			DriveList[DriveList.IndexOf(temp)].PauseTest();
 		}
 
-		public void StopTest(int index, bool force = false)
+		public void StopTest(object item, bool force = false)
 		{
-			DriveList[index].StopTest(force);
+			var temp = item as DriveInfoStorage;
+			DriveList[DriveList.IndexOf(temp)].StopTest(force);
+
+			foreach (var drive in DriveList)
+			{
+				if (drive.Running)
+					break;
+			}
 		}
 
 		public void StopAllTests(bool force = false)
 		{
 			foreach (var drive in DriveList)
+			{
 				drive.StopTest(force);
+				TestsRunning = false;
+			}
 		}
 
-		public void ShowLogSelected(int selectedIndex)
+		public void ShowLogSelected(object item)
 		{
-			var path = DriveList[selectedIndex].Settings.Log.Path;
+			var temp = item as DriveInfoStorage;
+			var path = DriveList[DriveList.IndexOf(temp)].Settings.Log.Path;
 
 			if (File.Exists(path))
 				Process.Start(path);
-		}
-
-
-		private void StartTest()
-		{
-			//try
-			//{
-			//	Title = GlobalContext.AppTitleTextBase + " - " + Drives[CbDrives.SelectedIndex].Name + Drives[CbDrives.SelectedIndex].VolumeLabel;
-			//	_testingThread = new Thread(() => CreateTester(GetSelectedIndex(CbTimePeriod), GetCheckBoxValue(CbCleanStart) == true));
-			//	_testingThread.Start();
-			//	SetGuiAccess(false);
-			//	SetStartStopButtonLabel(false);
-			//	SetTestingStatusText("запущено");
-			//	BtPausehTesting.Visibility = Visibility.Visible;
-			//	SetGuiAccess(false);
-			//}
-			//catch (Exception)
-			//{
-			//	MessageBox.Show(
-			//		"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства и файла журнала",
-			//		"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-			//}
-		}
-
-		private void StopTest()
-		{
-			//UnsubscribeFromTesterEvents();
-			//_tester.StopTest();
-			//do { } while (_tester.IsRunning);
-			//SetStartStopButtonLabel(true);
-			//SetTestingStatusText("остановлено");
-			//SetBackgroundColor(Color.FromRgb(255, 255, 255));
-			//SetTaskbarStatus(TaskbarItemProgressState.None, 0);
-			//BtPausehTesting.Visibility = Visibility.Hidden;
-			//SetCurrentFileText(" ");
-			//SetGuiAccess(true);
 		}
 	}
 }

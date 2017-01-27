@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shell;
 
@@ -13,6 +15,8 @@ namespace DriveErrorTest
 	{
 		private SystemTrayHelper _systemTrayHelper;
 		private DriveManager _driveManager;
+
+		public List<TimeSpan> Spans;  
 
 		public MainWindow()
 		{
@@ -115,47 +119,27 @@ namespace DriveErrorTest
 			GUIHelpers.SetWindowBackgroundColor(this, color);
 		}
 
-		private void SetTestingStatusText(string message)
-		{
-			// TODO: fix
-			GUIHelpers.SetLabelText(this, /* LbTestingStatusStrip */ null, message);
-		}
-
-		private void SetReadCyclesCountText(ulong cycles)
-		{
-			//TODO: fix
-			GUIHelpers.SetLabelText(this, /* LbReadCyclesStrip */ null, cycles.ToString());
-		}
-
-		private void SetWriteCyclesCountText(ulong cycles)
-		{
-			//TODO: fix
-			GUIHelpers.SetLabelText(this,/* LbWriteCyclesStrip */ null, cycles.ToString());
-		}
-
 		private void SetTaskbarStatus(TaskbarItemProgressState state, double value)
 		{
 			GUIHelpers.SetWindowTaskbarStatus(this, state, value);
 		}
 
-		private void SetCurrentFileText(string filepath)
-		{
-			//TODO: fix
-			GUIHelpers.SetLabelText(this,/* LbCurrFileStrip */ null, filepath);
-		}
-
 		private void PopulateComboboxes()
 		{
-			CbRewritePeriod.Items.Add("Раз в 10 минут");
-			CbRewritePeriod.Items.Add("Раз в час");
-			CbRewritePeriod.Items.Add("Раз в 3 часа");
-			CbRewritePeriod.Items.Add("Раз в 6 часов");
-			CbRewritePeriod.Items.Add("Раз в 12 часов");
-			CbRewritePeriod.Items.Add("Раз в сутки");
-			CbRewritePeriod.Items.Add("Раз в двое суток");
-			CbRewritePeriod.Items.Add("Раз в трое суток");
-			CbRewritePeriod.Items.Add("Раз в неделю");
+			Spans = new List<TimeSpan>
+			{
+				new TimeSpan(0, 0, 10, 0),
+				new TimeSpan(0, 1, 0, 0),
+				new TimeSpan(0, 3, 0, 0),
+				new TimeSpan(0, 6, 0, 0),
+				new TimeSpan(0, 12, 0, 0),
+				new TimeSpan(1, 0, 0, 0),
+				new TimeSpan(2, 0, 0, 0),
+				new TimeSpan(3, 0, 0, 0),
+				new TimeSpan(7, 0, 0, 0)
+			};
 
+			CbRewritePeriod.ItemsSource = Spans;
 			CbRewritePeriod.SelectedIndex = 2;
 		}
 
@@ -169,93 +153,21 @@ namespace DriveErrorTest
 			GrDrives.SelectedIndex = 0;
 		}
 
-		public static int GetSelectedIndex(System.Windows.Controls.ComboBox combobox)
+		public static int GetSelectedIndex(ComboBox combobox)
 		{
 			if (combobox.Dispatcher.CheckAccess())
 				return combobox.SelectedIndex;
 
-			return (int)combobox.Dispatcher.Invoke(new Func<System.Windows.Controls.ComboBox, int>(GetSelectedIndex), combobox);
+			return (int)combobox.Dispatcher.Invoke(new Func<ComboBox, int>(GetSelectedIndex), combobox);
 		}
 
-		public static bool? GetCheckBoxValue(System.Windows.Controls.CheckBox checkBox)
+		public static bool? GetCheckBoxValue(CheckBox checkBox)
 		{
 			if (checkBox.Dispatcher.CheckAccess())
 				return checkBox.IsChecked;
 
 			return
-				(bool?)checkBox.Dispatcher.Invoke(new Func<System.Windows.Controls.CheckBox, bool?>(GetCheckBoxValue), checkBox);
-		}
-
-		private void CreateTester(int periodValue, bool cleanStart)
-		{
-			//TimeSpan span;
-
-			//switch (periodValue)
-			//{
-			//	case 0:
-			//		span = TimeSpan.FromMinutes(10);
-			//		break;
-			//	case 1:
-			//		span = TimeSpan.FromHours(1);
-			//		break;
-			//	case 2:
-			//		span = TimeSpan.FromHours(3);
-			//		break;
-			//	case 3:
-			//		span = TimeSpan.FromHours(6);
-			//		break;
-			//	case 4:
-			//		span = TimeSpan.FromHours(12);
-			//		break;
-			//	case 5:
-			//		span = TimeSpan.FromDays(1);
-			//		break;
-			//	case 6:
-			//		span = TimeSpan.FromDays(2);
-			//		break;
-			//	case 7:
-			//		span = TimeSpan.FromDays(3);
-			//		break;
-			//	case 8:
-			//		span = TimeSpan.FromDays(7);
-			//		break;
-			//	default:
-			//		span = TimeSpan.FromDays(1);
-			//		break;
-			//}
-
-			//_tester = new Tester(new Logger(_logPath), Drives[GetSelectedIndex(CbDrives)], _sourcePath, span)
-			//{
-			//	CleanStart = cleanStart
-			//};
-
-			//SubscribeToTesterEvents();
-
-			//_tester.RunTest();
-		}
-
-		private void SubscribeToTesterEvents()
-		{
-			//if (_driveTester == null)
-			//	return;
-
-			//_driveTester.OnErrorCountChanged += OnErrorCountChangedEventHandler;
-			//_driveTester.OnCurrentFileChanged += OnCurrentFileChangedEventHandler;
-			//_driveTester.OnReadCyclesCountChanged += OnReadCyclesCountChangedEventHandler;
-			//_driveTester.OnWriteCyclesCountChanged += OnWriteCyclesCountChangedEventHandler;
-			//_driveTester.OnTestingStatusChanged += OnTestingStatusChangedEventHandler;
-		}
-
-		private void UnsubscribeFromTesterEvents()
-		{
-			//if (_driveTester == null)
-			//	return;
-
-			//_driveTester.OnErrorCountChanged -= OnErrorCountChangedEventHandler;
-			//_driveTester.OnCurrentFileChanged -= OnCurrentFileChangedEventHandler;
-			//_driveTester.OnReadCyclesCountChanged -= OnReadCyclesCountChangedEventHandler;
-			//_driveTester.OnWriteCyclesCountChanged -= OnWriteCyclesCountChangedEventHandler;
-			//_driveTester.OnTestingStatusChanged -= OnTestingStatusChangedEventHandler;
+				(bool?)checkBox.Dispatcher.Invoke(new Func<CheckBox, bool?>(GetCheckBoxValue), checkBox);
 		}
 
 		private void DisposeComponents()
@@ -269,62 +181,6 @@ namespace DriveErrorTest
 			DisposeComponents();
 			// TODO: exit more gracefully than that
 			Environment.Exit(0);
-		}
-
-		private void OnTestingStatusChangedEventHandler(string statusText)
-		{
-			SetTestingStatusText(statusText);
-		}
-
-		private void OnWriteCyclesCountChangedEventHandler(ulong cyclesCount)
-		{
-			SetWriteCyclesCountText(cyclesCount);
-		}
-
-		private void OnReadCyclesCountChangedEventHandler(ulong cyclesCount)
-		{
-			SetReadCyclesCountText(cyclesCount);
-		}
-
-		private void OnCurrentFileChangedEventHandler(string filename)
-		{
-			SetCurrentFileText(filename);
-		}
-
-		private void OnErrorCountChangedEventHandler(int errorsCount)
-		{
-			//if (errorsCount == 0)
-			//{
-			//	SetTestingStatusText("ошибок не найдено...");
-			//	SetBackgroundColor(Color.FromRgb(191, 235, 171));
-			//	SetTaskbarStatus(TaskbarItemProgressState.Normal, 1);
-			//}
-			//else
-			//{
-			//	if (errorsCount >= 100)
-			//	{
-			//		SetStartStopButtonLabel(true);
-			//		SetBackgroundColor(Color.FromRgb(162, 0, 0));
-			//		SetGuiAccess(true);
-			//		return;
-			//	}
-
-			//	SetTestingStatusText($"обнаружено {_driveTester.ErrorsCount} ошибок");
-			//	SetBackgroundColor(Color.FromRgb(245, 105, 105));
-			//	SetTaskbarStatus(TaskbarItemProgressState.Error, 1);
-			//}
-		}
-
-		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
-		{
-			if (GrDrives.SelectedIndex >= 0)
-				_driveManager.ShowLogSelected(GrDrives.SelectedIndex);
-		}
-
-		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-		{
-			Visibility = Visibility.Hidden;
-			e.Cancel = true;
 		}
 
 		private static bool AskToConfirmTestAbortion()
@@ -345,6 +201,28 @@ namespace DriveErrorTest
 				MessageBoxImage.Question) == MessageBoxResult.Yes;
 		}
 
+		private bool AskBeforeExit()
+		{
+			if (_driveManager.TestsRunning)
+			{
+				if (AskToConfirmTestAbortion())
+					return true;
+			}
+			else
+			{
+				if (AskToConfirmExit())
+					return true;
+			}
+
+			return false;
+		}
+
+		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			Visibility = Visibility.Hidden;
+			e.Cancel = true;
+		}
+
 		private void MenuItem_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (AskBeforeExit())
@@ -355,10 +233,19 @@ namespace DriveErrorTest
 		{
 			if (_driveManager.SourceDirectory != null)
 			{
-				if (GrDrives.SelectedIndex >= 0)
+				if (GrDrives.SelectedIndex < 0)
+					return;
+
+				try
 				{
-					if (GrDrives.SelectedIndex >= 0)
-						_driveManager.StartTest(GrDrives.SelectedIndex);
+					_driveManager.StartTest(GrDrives.SelectedIndex);
+					SetGuiAccess(false);
+				}
+				catch
+				{
+					MessageBox.Show(
+						"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства",
+						"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
 				}
 			}
 			else
@@ -371,7 +258,7 @@ namespace DriveErrorTest
 			}
 		}
 
-		private void BtPausehTesting_OnClick(object sender, RoutedEventArgs e)
+		private void BtPauseTesting_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (GrDrives.SelectedIndex >= 0)
 				_driveManager.PauseTest(GrDrives.SelectedIndex);
@@ -389,25 +276,15 @@ namespace DriveErrorTest
 			}
 		}
 
-		private bool AskBeforeExit()
+		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
 		{
-			if (_driveManager.TestsRunning)
-			{
-				if (AskToConfirmTestAbortion())
-					return true;
-			}
-			else
-			{
-				if (AskToConfirmExit())
-					return true;
-			}
-
-			return false;
+			if (GrDrives.SelectedIndex >= 0)
+				_driveManager.ShowLogSelected(GrDrives.SelectedIndex);
 		}
 
-		private void GrDrives_AutoGeneratingColumn(object sender, System.Windows.Controls.DataGridAutoGeneratingColumnEventArgs e)
+		private void GrDrives_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
 		{
-			if (e.PropertyName == "Settings")
+			if (e.PropertyName == "Settings" || e.PropertyName == "Running")
 				e.Cancel = true;
 		}
 	}

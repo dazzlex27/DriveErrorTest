@@ -8,20 +8,24 @@ namespace DriveErrorTest
 {
 	public class DriveTester
 	{
+		public event Action FormattingStarted;
+		public event Action WritingStarted;
 		public event Action<int> OnErrorCountChanged;
-		public event Action<ulong> OnReadCyclesCountChanged;
-		public event Action<ulong> OnWriteCyclesCountChanged;
+		public event Action<int> OnReadCyclesCountChanged;
+		public event Action<int> OnWriteCyclesCountChanged;
 		public event Action<string> OnTestingStatusChanged;
 		public event Action<string> OnCurrentFileChanged;
 		private readonly DriveTesterSettings _settings;
 		private DateTime _lastUpdateTime;
 		private readonly DriveInfo _drive;
 		private readonly Dictionary<string, bool> _files;
-		private ulong _readCyclesCount;
-		private ulong _writeCyclesCount;
+		private int _readCyclesCount;
+		private int _writeCyclesCount;
 		private int _errorsCount;
 
 		public bool IsRunning { get; private set; }
+
+		public bool IsPaused { get; private set; }
 
 		public int ErrorsCount
 		{
@@ -35,7 +39,7 @@ namespace DriveErrorTest
 			}
 		}
 
-		public ulong ReadCyclesCount
+		public int ReadCyclesCount
 		{
 			get { return _readCyclesCount; }
 			private set
@@ -45,7 +49,7 @@ namespace DriveErrorTest
 			}
 		}
 
-		public ulong WriteCyclesCount
+		public int WriteCyclesCount
 		{
 			get { return _writeCyclesCount; }
 			private set
@@ -60,12 +64,12 @@ namespace DriveErrorTest
 			return ++ErrorsCount;
 		}
 
-		private ulong IncrementReadCycles()
+		private int IncrementReadCycles()
 		{
 			return ++ReadCyclesCount;
 		}
 
-		private ulong IncrementWriteCycles()
+		private int IncrementWriteCycles()
 		{
 			return ++WriteCyclesCount;
 		}
@@ -73,11 +77,6 @@ namespace DriveErrorTest
 		private void SetCurrentFile(string currentFile)
 		{
 			OnCurrentFileChanged?.Invoke(currentFile);
-		}
-
-		private void SetTestingStatus(string status)
-		{
-			OnTestingStatusChanged?.Invoke(status);
 		}
 
 		public DriveTester(DriveInfo drive, DriveTesterSettings settings)
@@ -96,7 +95,6 @@ namespace DriveErrorTest
 
 			try
 			{
-
 				if (_settings.CleanStart)
 				{
 					do
@@ -113,6 +111,12 @@ namespace DriveErrorTest
 
 				while (IsRunning)
 				{
+					if (IsPaused)
+					{
+						Thread.Sleep(1000);
+						continue;
+					}
+
 					if (DateTime.Now - _lastUpdateTime > _settings.RewritePeriod)
 					{
 						_settings.Log.LogInfo(DateTime.Now, "Цикл чтения окончен. Всего итераций чтения - " + ReadCyclesCount);
@@ -137,7 +141,18 @@ namespace DriveErrorTest
 
 			SetCurrentFile("");
 			_settings.Log.LogInfo(DateTime.Now, "Тестирование прервано");
-			SetTestingStatus("остановлено");
+		}
+
+		public void ResumeTest()
+		{
+			if (IsRunning && IsPaused)
+				IsPaused = false;
+		}
+
+		public void PauseTest()
+		{
+			if (IsRunning)
+				IsPaused = true;
 		}
 
 		public void StopTest()
@@ -236,22 +251,21 @@ namespace DriveErrorTest
 
 		private bool LoadFilesToDrive()
 		{
-			SetTestingStatus("форматирование...");
+			FormattingStarted?.Invoke();
 			if (!FormatDrive())
 			{
 				IncrementErrorCount();
 				return false;
 			}
 
-			SetTestingStatus("получение списка файлов...");
+			WritingStarted?.Invoke();
 			if (!GetFilesFromSourceDirectory())
 			{
 				IncrementErrorCount();
 				return false;
 			}
 
-			SetTestingStatus("запись данных...");
-			if (_drive.RootDirectory.GetDirectories().Count() > 1)
+			if (_drive.RootDirectory.GetDirectories().Length > 1)
 			{
 				_settings.Log.LogError(DateTime.Now, "Устройство не отформатировано");
 				return false;

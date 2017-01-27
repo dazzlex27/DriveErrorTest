@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Management;
 using System.Security.Permissions;
+using System.Windows.Data;
 
 namespace DriveErrorTest
 {
@@ -15,13 +18,17 @@ namespace DriveErrorTest
 		StandBy,
 		[Description("В очереди")]
 		Pending,
+		[Description("Запускается")]
+		Launched,
 		[Description("Форматируется")]
 		Formatting,
+		[Description("Идёт запись")]
+		Writing,
 		[Description("Ошибок нет")]
 		NoErrorsFound,
 		[Description("Есть ошибки")]
 		ErrorsFound,
-		[Description("Крит. ошибка")]
+		[Description("Ошибка!")]
 		Fatal,
 		[Description("Пауза")]
 		Paused,
