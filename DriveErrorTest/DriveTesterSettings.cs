@@ -13,12 +13,12 @@ namespace DriveErrorTest
 		/// <summary>
 		/// How often the drive is formatted and data is rewritten on it
 		/// </summary>
-		public TimeSpan RewritePeriod { get; set; }
+		public TimeSpan RewritePeriod { get; set; } = new TimeSpan(0, 0, 30, 0);
 
 		/// <summary>
 		/// How many recovery attempts the tester will make
 		/// </summary>
-		public uint RecoveryAttempts { get; set; }
+		public uint RecoveryAttempts { get; set; } = 4;
 
 		/// <summary>
 		/// Source data folder 

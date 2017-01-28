@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,7 +17,9 @@ namespace DriveErrorTest
 		private SystemTrayHelper _systemTrayHelper;
 		private DriveManager _driveManager;
 
-		public List<TimeSpan> Spans;  
+		public List<TimeSpan> Spans;
+
+		public ObservableCollection<DriveInfoStorage> DriveList;
 
 		public MainWindow()
 		{
@@ -41,6 +44,7 @@ namespace DriveErrorTest
 			PopulateComboboxes();
 
 			InitializeDriveManager();
+			DriveList = _driveManager.DriveList;
 
 			if (_driveManager.DriveList.Count == 0)
 				SetGuiAccess(false);
@@ -90,7 +94,6 @@ namespace DriveErrorTest
 			{
 				CbRewritePeriod.Dispatcher.Invoke(new Action(() => CbRewritePeriod.IsEnabled = active));
 				BtSelectSourcePath.Dispatcher.Invoke(new Action(() => BtSelectSourcePath.IsEnabled = active));
-				BtShowLog.Dispatcher.Invoke(new Action(() => BtShowLog.IsEnabled = active));
 				CbCleanStart.Dispatcher.Invoke(new Action(() => CbCleanStart.IsEnabled = active));
 			}
 			else
@@ -238,11 +241,12 @@ namespace DriveErrorTest
 
 				try
 				{
-					_driveManager.StartTest(GrDrives.SelectedIndex);
+					_driveManager.StartTest(GrDrives.SelectedItem);
 					SetGuiAccess(false);
 				}
-				catch
+				catch (Exception ex)
 				{
+					CommonLogger.LogException("Failed to start test: " + ex.ToString());
 					MessageBox.Show(
 						"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства",
 						"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -261,7 +265,7 @@ namespace DriveErrorTest
 		private void BtPauseTesting_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (GrDrives.SelectedIndex >= 0)
-				_driveManager.PauseTest(GrDrives.SelectedIndex);
+				_driveManager.PauseTest(GrDrives.SelectedItem);
 		}
 
 		private void BtStop_Click(object sender, RoutedEventArgs e)
@@ -271,7 +275,7 @@ namespace DriveErrorTest
 				if (_driveManager.TestsRunning)
 				{
 					if (AskToConfirmTestAbortion())
-						_driveManager.StopTest(GrDrives.SelectedIndex);
+						_driveManager.StopTest(GrDrives.SelectedItem);
 				}
 			}
 		}
@@ -279,7 +283,7 @@ namespace DriveErrorTest
 		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (GrDrives.SelectedIndex >= 0)
-				_driveManager.ShowLogSelected(GrDrives.SelectedIndex);
+				_driveManager.ShowLogSelected(GrDrives.SelectedItem);
 		}
 
 		private void GrDrives_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)

@@ -1,32 +1,70 @@
-﻿using System.IO;
+﻿using System.ComponentModel;
+using System.IO;
 using System.Threading;
 
 namespace DriveErrorTest
 {
-	public class DriveInfoStorage
+	public class DriveInfoStorage : INotifyPropertyChanged
 	{
 		private readonly DriveInfo _drive;
 		private DriveTester _tester;
 		private Thread _testerThread;
+		private string _name;
+		private TestingStatus _healthStatus;
+		private int _writeCycles;
+		private int _readCycles;
+
+		public event PropertyChangedEventHandler PropertyChanged;
 
 		public DriveTesterSettings Settings { get; set; }
 
 		public bool Running { get; private set; }
 
-		public string Name { get; private set; }
+		public string Name
+		{
+			get { return _name; }
+			private set
+			{
+				_name = value;
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Name"));
+			}
+		}
 
-		public TestingStatus HealthStatus { get; private set; }
+		public TestingStatus HealthStatus
+		{
+			get { return _healthStatus; }
+			private set
+			{
+				_healthStatus = value;
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("HealthStatus"));
+			}
+		}
 
-		public int WriteCycles { get; private set; }
+		public int WriteCycles
+		{
+			get { return _writeCycles; }
+			private set
+			{
+				_writeCycles = value;
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("WriteCycles"));
+			}
+		}
 
-		public int ReadCycles { get; private set; }
+		public int ReadCycles
+		{
+			get { return _readCycles; }
+			private set
+			{
+				_readCycles = value;
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ReadCycles"));
+			}
+		}
 
 		public DriveInfoStorage(DriveInfo drive)
 		{
 			_drive = drive;
 			Name = drive.Name + drive.VolumeLabel;
 			Settings = new DriveTesterSettings();
-			Settings.RecoveryAttempts = 3;
 		}
 
 		public DriveInfo GetDeviceInfo()
