@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shell;
 
@@ -18,8 +19,6 @@ namespace DriveErrorTest
 		private DriveManager _driveManager;
 
 		public List<TimeSpan> Spans;
-
-		public ObservableCollection<DriveInfoStorage> DriveList;
 
 		public MainWindow()
 		{
@@ -44,7 +43,6 @@ namespace DriveErrorTest
 			PopulateComboboxes();
 
 			InitializeDriveManager();
-			DriveList = _driveManager.DriveList;
 
 			if (_driveManager.DriveList.Count == 0)
 				SetGuiAccess(false);
@@ -143,7 +141,6 @@ namespace DriveErrorTest
 			};
 
 			CbRewritePeriod.ItemsSource = Spans;
-			CbRewritePeriod.SelectedIndex = 2;
 		}
 
 		private void PopulateDriveGrid()
@@ -290,6 +287,39 @@ namespace DriveErrorTest
 		{
 			if (e.PropertyName == "Settings" || e.PropertyName == "Running")
 				e.Cancel = true;
+
+			var displayName = GUIHelpers.GetPropertyDisplayName(e.PropertyDescriptor);
+
+			if (!string.IsNullOrEmpty(displayName))
+				e.Column.Header = displayName;
+		}
+
+		private void GrDrives_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			if (GrDrives.SelectedIndex >= 0)
+			{
+				var item = (DriveInfoStorage)GrDrives.SelectedItem;
+				CbCleanStart.IsChecked = item.Settings.CleanStart == true;
+				CbRewritePeriod.SelectedItem = (TimeSpan)item.Settings.RewritePeriod;
+			}
+		}
+
+		private void CbRewritePeriod_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			if (GrDrives.SelectedIndex >= 0)
+			{
+				var item = (DriveInfoStorage)GrDrives.SelectedItem;
+				item.Settings.RewritePeriod = (TimeSpan)CbRewritePeriod.SelectedItem;
+			}
+		}
+
+		private void CbCleanStart_Checked(object sender, RoutedEventArgs e)
+		{
+			if (GrDrives.SelectedIndex >= 0)
+			{
+				var item = (DriveInfoStorage)GrDrives.SelectedItem;
+				item.Settings.CleanStart = CbCleanStart.IsChecked == true;
+			}
 		}
 	}
 }

@@ -68,6 +68,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="CommonLogger.cs" />
+    <Compile Include="Converters.cs" />
     <Compile Include="DriveInfoStorage.cs" />
     <Compile Include="DriveManager.cs" />
     <Compile Include="DriveTesterSettings.cs" />

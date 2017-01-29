@@ -8,6 +8,9 @@
         Title="Тестирование" SizeToContent="WidthAndHeight"
 		ResizeMode="CanMinimize"
 		Background="White" Closing="Window_Closing" Icon="res/Firstfear-Whistlepuff-Usb.ico" WindowStartupLocation="CenterScreen">
+	<Window.DataContext>
+		<Binding RelativeSource="{RelativeSource Self}"/>
+	</Window.DataContext>
 
 	<StackPanel>
 		<!-- Main menu -->
@@ -39,7 +42,7 @@
 				<ColumnDefinition Width="210"/>
 			</Grid.ColumnDefinitions>
 			<!-- Main grid -->
-			<DataGrid Name="GrDrives" AutoGeneratingColumn="GrDrives_AutoGeneratingColumn"/>
+			<DataGrid Name="GrDrives" AutoGeneratingColumn="GrDrives_AutoGeneratingColumn" SelectionChanged="GrDrives_SelectionChanged"/>
 			<!-- Parameters panel -->
 			<StackPanel Grid.Column="1" Margin="3,0,3,3">
 				<GroupBox>
@@ -49,10 +52,9 @@
 					<StackPanel>
 						<StackPanel>
 							<Label Margin="3,3,3,0" Content="Период перезаписи данных:"/>
-							<ComboBox Name="CbRewritePeriod" Margin="3,0,3,3" Padding="10,5" SelectedItem="{Binding Path=GrDrives.SelectedItem.Settings.RewritePeriod, Mode=TwoWay}"/>
+							<ComboBox Name="CbRewritePeriod" Margin="3,0,3,3" Padding="10,5" SelectionChanged="CbRewritePeriod_SelectionChanged"/>
 						</StackPanel>
-						<CheckBox Name="CbCleanStart" Margin="5,3" VerticalAlignment="Center" Content="Форматировать" IsChecked="{Binding Path=GrDrives.SelectedItem.CleanStart, Mode=TwoWay}" ToolTip="Форматировать устройство перед началом тестирования"/>
-
+						<CheckBox Name="CbCleanStart" Margin="5,3" VerticalAlignment="Center" Content="Форматировать" ToolTip="Форматировать устройство перед началом тестирования" Checked="CbCleanStart_Checked" Unchecked="CbCleanStart_Checked"/>
 					</StackPanel>
 				</GroupBox>
 				<GroupBox>

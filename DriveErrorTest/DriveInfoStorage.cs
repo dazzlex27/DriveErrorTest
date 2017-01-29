@@ -20,6 +20,7 @@ namespace DriveErrorTest
 
 		public bool Running { get; private set; }
 
+		[DisplayName("Наименование")]
 		public string Name
 		{
 			get { return _name; }
@@ -30,6 +31,7 @@ namespace DriveErrorTest
 			}
 		}
 
+		[DisplayName("Состояние")]
 		public TestingStatus HealthStatus
 		{
 			get { return _healthStatus; }
@@ -40,6 +42,7 @@ namespace DriveErrorTest
 			}
 		}
 
+		[DisplayName("Циклов записи")]
 		public int WriteCycles
 		{
 			get { return _writeCycles; }
@@ -50,6 +53,7 @@ namespace DriveErrorTest
 			}
 		}
 
+		[DisplayName("Циклов чтения")]
 		public int ReadCycles
 		{
 			get { return _readCycles; }
