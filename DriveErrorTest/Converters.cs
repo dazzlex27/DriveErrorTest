@@ -1,42 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
 
 namespace DriveErrorTest
 {
-	public class EnumTemplateColumn : DataGridBoundColumn
+	public class EnumConverter : IValueConverter
 	{
-		private readonly Type enumType;
-
-		public EnumTemplateColumn(Type enumType)
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			this.enumType = enumType;
+			if (value == null) return DependencyProperty.UnsetValue;
+
+			return GetDescription((Enum)value);
 		}
 
-		protected override FrameworkElement GenerateElement(DataGridCell cell, object dataItem)
+		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			string columnHeader = cell.Column.Header.ToString();
-			TextBlock textBlock = new TextBlock();
-			var dataRowView = (DataRowView)dataItem;
-			var enumValue = dataRowView[columnHeader];
-
-			textBlock.Text = Enum.GetName(this.enumType, enumValue);
-
-			return textBlock;
+			return Enum.ToObject(targetType, value);
 		}
 
-		protected override FrameworkElement GenerateEditingElement(DataGridCell cell, object dataItem)
+		public static string GetDescription(Enum en)
 		{
-			throw new NotImplementedException();
+			Type type = en.GetType();
+			MemberInfo[] memInfo = type.GetMember(en.ToString());
+			if (memInfo != null && memInfo.Length > 0)
+			{
+				object[] attrs = memInfo[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+				if (attrs != null && attrs.Length > 0)
+				{
+					return ((DescriptionAttribute)attrs[0]).Description;
+				}
+			}
+			return en.ToString();
 		}
 	}
 }

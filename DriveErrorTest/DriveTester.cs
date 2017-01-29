@@ -14,6 +14,7 @@ namespace DriveErrorTest
 		public event Action<int> OnReadCyclesCountChanged;
 		public event Action<int> OnWriteCyclesCountChanged;
 		public event Action<string> OnTestingStatusChanged;
+		public event Action ErrorCountExceeded;
 		public event Action<string> OnCurrentFileChanged;
 		private readonly DriveTesterSettings _settings;
 		private DateTime _lastUpdateTime;
@@ -163,6 +164,7 @@ namespace DriveErrorTest
 		private void BreakTestOnEmergency()
 		{
 			StopTest();
+			ErrorCountExceeded?.Invoke();
 			_settings.Log.LogInfo(DateTime.Now, "Тестирование аварийно завершено");
 		}
 

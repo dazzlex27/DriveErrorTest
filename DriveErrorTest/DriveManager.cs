@@ -42,7 +42,11 @@ namespace DriveErrorTest
 			var drives = DriveInfo.GetDrives().Where(drive => drive.IsReady && drive.DriveType == DriveType.Removable);
 
 			foreach (var drive in drives.Where(drive => drive.DriveType == DriveType.Removable))
-				DriveList.Add(new DriveInfoStorage(drive));
+			{
+				var item = new DriveInfoStorage(drive);
+				item.CriticalErrorOccured += () => { if (item.GetRestartsLeftAndDecrement() > 0) StartTest(item); };
+				DriveList.Add(item);
+			}
 		}
 
 		private void InitializeStartQueue()

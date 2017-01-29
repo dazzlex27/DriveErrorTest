@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Threading;
 
@@ -13,7 +14,9 @@ namespace DriveErrorTest
 		private TestingStatus _healthStatus;
 		private int _writeCycles;
 		private int _readCycles;
+		private uint _restartsLeft;
 
+		public event Action CriticalErrorOccured;
 		public event PropertyChangedEventHandler PropertyChanged;
 
 		public DriveTesterSettings Settings { get; set; }
@@ -69,6 +72,12 @@ namespace DriveErrorTest
 			_drive = drive;
 			Name = drive.Name + drive.VolumeLabel;
 			Settings = new DriveTesterSettings();
+			_restartsLeft = Settings.RecoveryAttempts;
+		}
+
+		public uint GetRestartsLeftAndDecrement()
+		{
+			return _restartsLeft--;
 		}
 
 		public DriveInfo GetDeviceInfo()
@@ -107,6 +116,11 @@ namespace DriveErrorTest
 			_tester.OnReadCyclesCountChanged += value => { ReadCycles = value; };
 			_tester.OnWriteCyclesCountChanged += value => { WriteCycles = value; };
 			_tester.OnErrorCountChanged += value => { HealthStatus = value == 0 ? TestingStatus.NoErrorsFound : TestingStatus.ErrorsFound; };
+			_tester.ErrorCountExceeded += () => 
+			{
+				HealthStatus = TestingStatus.Fatal;
+				CriticalErrorOccured?.Invoke();
+			};
 
 			_tester.RunTest();
 		}
