@@ -87,6 +87,9 @@ namespace DriveErrorTest
 
 		public void StartTest()
 		{
+			if (Running)
+				return;
+
 			_testerThread = new Thread(LaunchTestingThread);
 			_testerThread.Start();
 			HealthStatus = TestingStatus.Launched;

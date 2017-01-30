@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shell;
 
@@ -13,15 +12,27 @@ namespace DriveErrorTest
 	/// <summary>
 	///     Interaction logic for MainWindow.xaml
 	/// </summary>
-	public partial class MainWindow
+	public partial class MainWindow : INotifyPropertyChanged
 	{
 		private SystemTrayHelper _systemTrayHelper;
 		private DriveManager _driveManager;
+		private DriveInfoStorage _selectedDrive;
 
-		public List<TimeSpan> Spans;
+		public List<TimeSpan> Spans { get; set; }
+
+		public DriveInfoStorage SelectedDrive
+		{
+			get { return _selectedDrive; }
+			set
+			{
+				_selectedDrive = value;
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("SelectedDrive"));
+			}
+		}
 
 		public MainWindow()
 		{
+			CreateSpansList();
 			InitializeComponent();
 			InitializeAppLogic();
 		}
@@ -40,8 +51,7 @@ namespace DriveErrorTest
 
 			Title = GlobalContext.AppTitleTextBase;
 			TaskbarItemInfo = new TaskbarItemInfo();
-			PopulateComboboxes();
-
+			
 			InitializeDriveManager();
 
 			if (_driveManager.DriveList.Count == 0)
@@ -109,12 +119,6 @@ namespace DriveErrorTest
 			LbInputPath.Content = _driveManager.SourceDirectory.FullName;
 		}
 
-		private void BtStopAllDrives_OnClick(object sender, RoutedEventArgs e)
-		{
-			if (AskToConfirmTestAbortion())
-				_driveManager.StopAllTests();
-		}
-
 		public void SetBackgroundColor(Color color)
 		{
 			GUIHelpers.SetWindowBackgroundColor(this, color);
@@ -125,7 +129,7 @@ namespace DriveErrorTest
 			GUIHelpers.SetWindowTaskbarStatus(this, state, value);
 		}
 
-		private void PopulateComboboxes()
+		private void CreateSpansList()
 		{
 			Spans = new List<TimeSpan>
 			{
@@ -139,8 +143,6 @@ namespace DriveErrorTest
 				new TimeSpan(3, 0, 0, 0),
 				new TimeSpan(7, 0, 0, 0)
 			};
-
-			CbRewritePeriod.ItemsSource = Spans;
 		}
 
 		private void PopulateDriveGrid()
@@ -153,27 +155,51 @@ namespace DriveErrorTest
 			GrDrives.SelectedIndex = 0;
 		}
 
-		public static int GetSelectedIndex(ComboBox combobox)
-		{
-			if (combobox.Dispatcher.CheckAccess())
-				return combobox.SelectedIndex;
-
-			return (int)combobox.Dispatcher.Invoke(new Func<ComboBox, int>(GetSelectedIndex), combobox);
-		}
-
-		public static bool? GetCheckBoxValue(CheckBox checkBox)
-		{
-			if (checkBox.Dispatcher.CheckAccess())
-				return checkBox.IsChecked;
-
-			return
-				(bool?)checkBox.Dispatcher.Invoke(new Func<CheckBox, bool?>(GetCheckBoxValue), checkBox);
-		}
-
 		private void DisposeComponents()
 		{
-			_driveManager.StopAllTests();
+			foreach (var item in _driveManager.DriveList)
+				_driveManager.StopTest(item);
 			_systemTrayHelper?.Dispose();
+		}
+
+		private void TryToStartTest(object item)
+		{
+			var temp = item as DriveInfoStorage;
+
+			if (_driveManager.SourceDirectory != null)
+			{
+				try
+				{
+					_driveManager.StartTest(temp);
+				}
+				catch (Exception ex)
+				{
+					CommonLogger.LogException("Failed to start test: " + ex);
+					MessageBox.Show(
+						"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства" + temp?.Name,
+						"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+				}
+			}
+			else
+			{
+				GUIHelpers.ShowNoSourceSelectedMessage();
+			}
+		}
+
+		private bool AskBeforeExit()
+		{
+			if (_driveManager.TestsRunning)
+			{
+				if (GUIHelpers.AskToConfirmTestAbortion())
+					return true;
+			}
+			else
+			{
+				if (GUIHelpers.AskToConfirmExit())
+					return true;
+			}
+
+			return false;
 		}
 
 		private void ExitApp()
@@ -181,46 +207,6 @@ namespace DriveErrorTest
 			DisposeComponents();
 			// TODO: exit more gracefully than that
 			Environment.Exit(0);
-		}
-
-		private static bool AskToConfirmTestAbortion()
-		{
-			return MessageBox.Show(
-					"Вы действительно хотите прервать тестирование?",
-					"Подтвердите действие",
-					MessageBoxButton.YesNo,
-					MessageBoxImage.Question) == MessageBoxResult.Yes;
-		}
-
-		private static bool AskToConfirmExit()
-		{
-			return MessageBox.Show(
-				"Вы действительно хотите выйти?",
-				"Завершение тестирования",
-				MessageBoxButton.YesNo,
-				MessageBoxImage.Question) == MessageBoxResult.Yes;
-		}
-
-		private bool AskBeforeExit()
-		{
-			if (_driveManager.TestsRunning)
-			{
-				if (AskToConfirmTestAbortion())
-					return true;
-			}
-			else
-			{
-				if (AskToConfirmExit())
-					return true;
-			}
-
-			return false;
-		}
-
-		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-		{
-			Visibility = Visibility.Hidden;
-			e.Cancel = true;
 		}
 
 		private void MenuItem_OnClick(object sender, RoutedEventArgs e)
@@ -231,32 +217,10 @@ namespace DriveErrorTest
 
 		private void BtStart_Click(object sender, RoutedEventArgs e)
 		{
-			if (_driveManager.SourceDirectory != null)
-			{
-				if (GrDrives.SelectedIndex < 0)
-					return;
+			if (GrDrives.SelectedIndex < 0)
+				return;
 
-				try
-				{
-					_driveManager.StartTest(GrDrives.SelectedItem);
-					SetGuiAccess(false);
-				}
-				catch (Exception ex)
-				{
-					CommonLogger.LogException("Failed to start test: " + ex.ToString());
-					MessageBox.Show(
-						"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства",
-						"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-				}
-			}
-			else
-			{
-				MessageBox.Show(
-					"Не указана папка-источник данных!",
-					"Невозможно запустить тестирование",
-					MessageBoxButton.OK,
-					MessageBoxImage.Exclamation);
-			}
+			TryToStartTest(GrDrives.SelectedItem);
 		}
 
 		private void BtPauseTesting_OnClick(object sender, RoutedEventArgs e)
@@ -267,20 +231,14 @@ namespace DriveErrorTest
 
 		private void BtStop_Click(object sender, RoutedEventArgs e)
 		{
-			if (GrDrives.SelectedIndex >= 0)
-			{
-				if (_driveManager.TestsRunning)
-				{
-					if (AskToConfirmTestAbortion())
-						_driveManager.StopTest(GrDrives.SelectedItem);
-				}
-			}
-		}
+			if (GrDrives.SelectedIndex < 0)
+				return;
 
-		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
-		{
-			if (GrDrives.SelectedIndex >= 0)
-				_driveManager.ShowLogSelected(GrDrives.SelectedItem);
+			if (!_driveManager.TestsRunning)
+				return;
+
+			if (GUIHelpers.AskToConfirmTestAbortion())
+				_driveManager.StopTest(GrDrives.SelectedItem);
 		}
 
 		private void GrDrives_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
@@ -292,34 +250,60 @@ namespace DriveErrorTest
 
 			if (!string.IsNullOrEmpty(displayName))
 				e.Column.Header = displayName;
+
+			DataGridComboBoxColumn col = e.Column as DataGridComboBoxColumn;
+			if (col != null)
+			{
+				//col.DisplayMemberPath = "Description";
+			}
 		}
 
 		private void GrDrives_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
-			if (GrDrives.SelectedIndex >= 0)
+			if (GrDrives.SelectedIndex < 0)
+				return;
+
+			var item = (DriveInfoStorage)GrDrives.SelectedItem;
+			if (item.Running)
 			{
-				var item = (DriveInfoStorage)GrDrives.SelectedItem;
-				CbCleanStart.IsChecked = item.Settings.CleanStart == true;
-				CbRewritePeriod.SelectedItem = (TimeSpan)item.Settings.RewritePeriod;
+				CbCleanStart.IsEnabled = false;
+				CbRewritePeriod.IsEnabled = false;
 			}
+			else
+			{
+				CbCleanStart.IsEnabled = true;
+				CbRewritePeriod.IsEnabled = true;
+			}
+
+			SelectedDrive = item;
+		}
+		
+
+		private void BtStartAllDrives_OnClick(object sender, RoutedEventArgs e)
+		{
+			foreach (var item in _driveManager.DriveList)
+				TryToStartTest(item);
 		}
 
-		private void CbRewritePeriod_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		private void BtStopAllDrives_OnClick(object sender, RoutedEventArgs e)
 		{
-			if (GrDrives.SelectedIndex >= 0)
-			{
-				var item = (DriveInfoStorage)GrDrives.SelectedItem;
-				item.Settings.RewritePeriod = (TimeSpan)CbRewritePeriod.SelectedItem;
-			}
+			if (GUIHelpers.AskToConfirmTestAbortion())
+				foreach (var item in _driveManager.DriveList)
+					_driveManager.StopTest(item);
 		}
 
-		private void CbCleanStart_Checked(object sender, RoutedEventArgs e)
+		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (GrDrives.SelectedIndex >= 0)
-			{
-				var item = (DriveInfoStorage)GrDrives.SelectedItem;
-				item.Settings.CleanStart = CbCleanStart.IsChecked == true;
-			}
+				_driveManager.ShowLogSelected(GrDrives.SelectedItem);
 		}
+
+		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			Visibility = Visibility.Hidden;
+			e.Cancel = true;
+		}
+
+		public event PropertyChangedEventHandler PropertyChanged;
 	}
 }

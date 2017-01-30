@@ -45,6 +45,7 @@ namespace DriveErrorTest
 			{
 				var item = new DriveInfoStorage(drive);
 				item.CriticalErrorOccured += () => { if (item.GetRestartsLeftAndDecrement() > 0) StartTest(item); };
+				item.SetHealthStatus(TestingStatus.StandingBy);
 				DriveList.Add(item);
 			}
 		}
@@ -58,7 +59,7 @@ namespace DriveErrorTest
 		public void StartTest(object item)
 		{
 			var temp = item as DriveInfoStorage;
-			if (temp.HealthStatus != TestingStatus.Paused)
+			if (!temp.Running && temp.HealthStatus != TestingStatus.Paused)
 			{
 				_startQueue.Add(DriveList[DriveList.IndexOf(temp)]);
 				DriveList[DriveList.IndexOf(temp)].SetHealthStatus(TestingStatus.Pending);
@@ -79,11 +80,10 @@ namespace DriveErrorTest
 			var temp = item as DriveInfoStorage;
 			DriveList[DriveList.IndexOf(temp)].StopTest(force);
 
-			foreach (var drive in DriveList)
-			{
-				if (drive.Running)
-					break;
-			}
+			if (DriveList.Any(drive => drive.Running))
+				return;
+
+			TestsRunning = false;
 		}
 
 		public void StopAllTests(bool force = false)

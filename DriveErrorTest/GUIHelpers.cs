@@ -103,5 +103,32 @@ namespace DriveErrorTest
 
 			return null;
 		}
+
+		public static bool AskToConfirmTestAbortion()
+		{
+			return MessageBox.Show(
+					"Вы действительно хотите прервать тестирование?",
+					"Подтвердите действие",
+					MessageBoxButton.YesNo,
+					MessageBoxImage.Question) == MessageBoxResult.Yes;
+		}
+
+		public static bool AskToConfirmExit()
+		{
+			return MessageBox.Show(
+				"Вы действительно хотите выйти?",
+				"Завершение тестирования",
+				MessageBoxButton.YesNo,
+				MessageBoxImage.Question) == MessageBoxResult.Yes;
+		}
+
+		public static void ShowNoSourceSelectedMessage()
+		{
+			MessageBox.Show(
+					"Не указана папка-источник данных!",
+					"Невозможно запустить тестирование",
+					MessageBoxButton.OK,
+					MessageBoxImage.Exclamation);
+		}
 	}
 }

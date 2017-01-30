@@ -15,7 +15,7 @@ namespace DriveErrorTest
 		[Description("Неактивен")]
 		NotActive,
 		[Description("Готов")]
-		StandBy,
+		StandingBy,
 		[Description("В очереди")]
 		Pending,
 		[Description("Запускается")]

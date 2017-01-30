@@ -4,7 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:local="clr-namespace:DriveErrorTest"
-        mc:Ignorable="d"
+		xmlns:system="clr-namespace:System;assembly=mscorlib"
+		mc:Ignorable="d"
         Title="Тестирование" SizeToContent="WidthAndHeight"
 		ResizeMode="CanMinimize"
 		Background="White" Closing="Window_Closing" Icon="res/Firstfear-Whistlepuff-Usb.ico" WindowStartupLocation="CenterScreen">
@@ -16,7 +17,7 @@
 		<!-- Main menu -->
 		<Menu>
 			<MenuItem Header="Меню">
-				<MenuItem Name="BtStartAllDrives" Header="Запустить все"/>
+				<MenuItem Name="BtStartAllDrives" Header="Запустить все" Click="BtStartAllDrives_OnClick"/>
 				<MenuItem Name="BtStopAllDrives" Header="Остановить все" Click="BtStopAllDrives_OnClick"/>
 				<Separator/>
 				<MenuItem Header="Выход" Click="MenuItem_OnClick"></MenuItem>
@@ -52,9 +53,9 @@
 					<StackPanel>
 						<StackPanel>
 							<Label Margin="3,3,3,0" Content="Период перезаписи данных:"/>
-							<ComboBox Name="CbRewritePeriod" Margin="3,0,3,3" Padding="10,5" SelectionChanged="CbRewritePeriod_SelectionChanged"/>
+							<ComboBox Name="CbRewritePeriod" ItemsSource="{Binding Path=Spans}" Margin="3,0,3,3" Padding="10,5" SelectedItem ="{Binding Path=SelectedDrive.Settings.RewritePeriod, Mode=TwoWay}"/>
 						</StackPanel>
-						<CheckBox Name="CbCleanStart" Margin="5,3" VerticalAlignment="Center" Content="Форматировать" ToolTip="Форматировать устройство перед началом тестирования" Checked="CbCleanStart_Checked" Unchecked="CbCleanStart_Checked"/>
+						<CheckBox Name="CbCleanStart" Margin="5,3" VerticalAlignment="Center" Content="Форматировать" IsChecked="{Binding Path=SelectedDrive.Settings.CleanStart, Mode=TwoWay}" ToolTip="Форматировать устройство перед началом тестирования"/>
 					</StackPanel>
 				</GroupBox>
 				<GroupBox>
