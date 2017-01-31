@@ -14,6 +14,8 @@ namespace DriveErrorTest
 	/// </summary>
 	public partial class MainWindow : INotifyPropertyChanged
 	{
+		public event PropertyChangedEventHandler PropertyChanged;
+
 		private SystemTrayHelper _systemTrayHelper;
 		private DriveManager _driveManager;
 		private DriveInfoStorage _selectedDrive;
@@ -30,14 +32,17 @@ namespace DriveErrorTest
 			}
 		}
 
-		public MainWindow()
+		public DriveManager DriveManager
 		{
-			CreateSpansList();
-			InitializeComponent();
-			InitializeAppLogic();
+			get { return _driveManager; }
+			set
+			{
+				_driveManager = value;
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("DriveManager"));
+			}
 		}
 
-		private void InitializeAppLogic()
+		public MainWindow()
 		{
 			if (!CheckIfMutexIsAvailable())
 			{
@@ -45,19 +50,23 @@ namespace DriveErrorTest
 				ExitApp();
 			}
 
-			InitializeTrayIcon();
-
-			CommonLogger.Initialize();
+			CreateSpansList();
+			InitializeDriveManager();
+			InitializeComponent();
+			InitializeAppComponents();
 
 			Title = GlobalContext.AppTitleTextBase;
 			TaskbarItemInfo = new TaskbarItemInfo();
-			
-			InitializeDriveManager();
+		}
+
+		private void InitializeAppComponents()
+		{
+			CommonLogger.Initialize();
+
+			InitializeTrayIcon();
 
 			if (_driveManager.DriveList.Count == 0)
 				SetGuiAccess(false);
-
-			PopulateDriveGrid();
 		}
 
 		private static bool CheckIfMutexIsAvailable()
@@ -84,10 +93,7 @@ namespace DriveErrorTest
 
 		private void SystemTrayHelper_ShowWindowEvent()
 		{
-			if (IsVisible)
-				Visibility = Visibility.Hidden;
-			else
-				Visibility = Visibility.Visible;
+			Visibility = IsVisible ? Visibility.Hidden : Visibility.Visible;
 		}
 
 		private void SystemTrayHelper_ShutAppDownEvent()
@@ -106,17 +112,6 @@ namespace DriveErrorTest
 			}
 			else
 				Dispatcher.Invoke(new Action<bool>(SetGuiAccess), active);
-		}
-
-		private void BtSelectTestData_OnClick(object sender, RoutedEventArgs e)
-		{
-			var dg = new System.Windows.Forms.FolderBrowserDialog();
-
-			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-				return;
-
-			_driveManager.SourceDirectory = new System.IO.DirectoryInfo(dg.SelectedPath);
-			LbInputPath.Content = _driveManager.SourceDirectory.FullName;
 		}
 
 		public void SetBackgroundColor(Color color)
@@ -143,16 +138,6 @@ namespace DriveErrorTest
 				new TimeSpan(3, 0, 0, 0),
 				new TimeSpan(7, 0, 0, 0)
 			};
-		}
-
-		private void PopulateDriveGrid()
-		{
-			GrDrives.ItemsSource = _driveManager.DriveList;
-
-			if (_driveManager.DriveList.Count == 0)
-				return;
-
-			GrDrives.SelectedIndex = 0;
 		}
 
 		private void DisposeComponents()
@@ -205,8 +190,7 @@ namespace DriveErrorTest
 		private void ExitApp()
 		{
 			DisposeComponents();
-			// TODO: exit more gracefully than that
-			Environment.Exit(0);
+			Application.Current.Shutdown(0);
 		}
 
 		private void MenuItem_OnClick(object sender, RoutedEventArgs e)
@@ -241,23 +225,6 @@ namespace DriveErrorTest
 				_driveManager.StopTest(GrDrives.SelectedItem);
 		}
 
-		private void GrDrives_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
-		{
-			if (e.PropertyName == "Settings" || e.PropertyName == "Running")
-				e.Cancel = true;
-
-			var displayName = GUIHelpers.GetPropertyDisplayName(e.PropertyDescriptor);
-
-			if (!string.IsNullOrEmpty(displayName))
-				e.Column.Header = displayName;
-
-			DataGridComboBoxColumn col = e.Column as DataGridComboBoxColumn;
-			if (col != null)
-			{
-				//col.DisplayMemberPath = "Description";
-			}
-		}
-
 		private void GrDrives_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			if (GrDrives.SelectedIndex < 0)
@@ -277,7 +244,6 @@ namespace DriveErrorTest
 
 			SelectedDrive = item;
 		}
-		
 
 		private void BtStartAllDrives_OnClick(object sender, RoutedEventArgs e)
 		{
@@ -298,12 +264,21 @@ namespace DriveErrorTest
 				_driveManager.ShowLogSelected(GrDrives.SelectedItem);
 		}
 
+		private void BtSelectTestData_OnClick(object sender, RoutedEventArgs e)
+		{
+			var dg = new System.Windows.Forms.FolderBrowserDialog();
+
+			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+				return;
+
+			_driveManager.SourceDirectory = new System.IO.DirectoryInfo(dg.SelectedPath);
+			LbInputPath.Content = _driveManager.SourceDirectory.FullName;
+		}
+
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
 			Visibility = Visibility.Hidden;
 			e.Cancel = true;
 		}
-
-		public event PropertyChangedEventHandler PropertyChanged;
 	}
 }

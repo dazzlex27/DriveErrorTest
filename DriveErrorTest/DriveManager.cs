@@ -5,11 +5,10 @@ using System.Linq;
 
 namespace DriveErrorTest
 {
-	class DriveManager
+	public class DriveManager
 	{
 		private TestStartQueue _startQueue;
 		private DirectoryInfo _sourceDirectory;
-
 		public ObservableCollection<DriveInfoStorage> DriveList { get; set; }
 
 		public DirectoryInfo SourceDirectory

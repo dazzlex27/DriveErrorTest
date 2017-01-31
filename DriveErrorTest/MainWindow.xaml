@@ -3,15 +3,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		xmlns:local="clr-namespace:DriveErrorTest"
-		xmlns:system="clr-namespace:System;assembly=mscorlib"
+		xmlns:local ="clr-namespace:DriveErrorTest"
 		mc:Ignorable="d"
         Title="Тестирование" SizeToContent="WidthAndHeight"
 		ResizeMode="CanMinimize"
-		Background="White" Closing="Window_Closing" Icon="res/Firstfear-Whistlepuff-Usb.ico" WindowStartupLocation="CenterScreen">
-	<Window.DataContext>
-		<Binding RelativeSource="{RelativeSource Self}"/>
-	</Window.DataContext>
+		Background="White" 
+		Closing="Window_Closing" 
+		Icon="res/Firstfear-Whistlepuff-Usb.ico" 
+		WindowStartupLocation="CenterScreen"
+		DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
 	<StackPanel>
 		<!-- Main menu -->
@@ -43,7 +43,14 @@
 				<ColumnDefinition Width="210"/>
 			</Grid.ColumnDefinitions>
 			<!-- Main grid -->
-			<DataGrid Name="GrDrives" AutoGeneratingColumn="GrDrives_AutoGeneratingColumn" SelectionChanged="GrDrives_SelectionChanged"/>
+			<DataGrid Name="GrDrives" ItemsSource="{Binding Path=DriveManager.DriveList}" AutoGenerateColumns="False" SelectionChanged="GrDrives_SelectionChanged">
+				<DataGrid.Columns>
+					<DataGridTextColumn Header="Наименование" Binding="{Binding Path=Name, Mode=OneWay}"/>
+					<DataGridComboBoxColumn Header="Состояние" ItemsSource="{Binding Source={local:EnumBindingSource {x:Type local:TestingStatus}}, Mode=OneWay}"/>
+					<DataGridTextColumn Header="Циклов чтения" Binding="{Binding Path=ReadCycles, Mode=OneWay}"/>
+					<DataGridTextColumn Header="Циклов записи" Binding="{Binding Path=WriteCycles, Mode=OneWay}"/>
+				</DataGrid.Columns>
+			</DataGrid>
 			<!-- Parameters panel -->
 			<StackPanel Grid.Column="1" Margin="3,0,3,3">
 				<GroupBox>
