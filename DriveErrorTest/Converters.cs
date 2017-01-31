@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
 using System.Windows.Data;
 using System.Windows.Markup;
@@ -15,10 +13,10 @@ namespace DriveErrorTest
 
 		public Type EnumType
 		{
-			get { return this._enumType; }
+			get { return _enumType; }
 			set
 			{
-				if (value != this._enumType)
+				if (value != _enumType)
 				{
 					if (null != value)
 					{
@@ -27,7 +25,7 @@ namespace DriveErrorTest
 							throw new ArgumentException("Type must be for an Enum.");
 					}
 
-					this._enumType = value;
+					_enumType = value;
 				}
 			}
 		}
@@ -38,18 +36,18 @@ namespace DriveErrorTest
 
 		public EnumBindingSourceExtension(Type enumType)
 		{
-			this.EnumType = enumType;
+			EnumType = enumType;
 		}
 
 		public override object ProvideValue(IServiceProvider serviceProvider)
 		{
-			if (null == this._enumType)
+			if (null == _enumType)
 				throw new InvalidOperationException("The EnumType must be specified.");
 
-			Type actualEnumType = Nullable.GetUnderlyingType(this._enumType) ?? this._enumType;
-			Array enumValues = Enum.GetValues(actualEnumType);
+			var actualEnumType = Nullable.GetUnderlyingType(_enumType) ?? _enumType;
+			var enumValues = Enum.GetValues(actualEnumType);
 
-			if (actualEnumType == this._enumType)
+			if (actualEnumType == _enumType)
 				return enumValues;
 
 			Array tempArray = Array.CreateInstance(actualEnumType, enumValues.Length + 1);
@@ -64,7 +62,7 @@ namespace DriveErrorTest
 			: base(type)
 		{
 		}
-		public override object ConvertTo(ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value, Type destinationType)
+		public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
 		{
 			if (destinationType == typeof(string))
 			{
@@ -74,7 +72,7 @@ namespace DriveErrorTest
 					if (fi != null)
 					{
 						var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
-						return ((attributes.Length > 0) && (!String.IsNullOrEmpty(attributes[0].Description))) ? attributes[0].Description : value.ToString();
+						return ((attributes.Length > 0) && (!string.IsNullOrEmpty(attributes[0].Description))) ? attributes[0].Description : value.ToString();
 					}
 				}
 
@@ -82,6 +80,43 @@ namespace DriveErrorTest
 			}
 
 			return base.ConvertTo(context, culture, value, destinationType);
+		}
+	}
+
+	public class TimeSpanConverter : IValueConverter
+	{
+		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+		{
+			if (!(value is TimeSpan))
+				return string.Empty;
+
+			var t = (TimeSpan)value;
+
+			return TimeSpanValueParser.GetString(t.Days, t.Hours, t.Minutes);
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+		{
+			return TimeSpan.Parse(value.ToString());
+		}
+	}
+
+	public static class TimeSpanValueParser
+	{
+		public static string GetString(int days, int hours, int minutes)
+		{
+			string result = "";
+
+			if (days > 0)
+				result += days + " д. ";
+
+			if (hours > 0)
+				result += hours + " ч. ";
+
+			if (minutes > 0)
+				result += minutes + " м."; 
+
+			return result;
 		}
 	}
 }

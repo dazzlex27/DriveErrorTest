@@ -46,7 +46,7 @@
 			<DataGrid Name="GrDrives" ItemsSource="{Binding Path=DriveManager.DriveList}" AutoGenerateColumns="False" SelectionChanged="GrDrives_SelectionChanged">
 				<DataGrid.Columns>
 					<DataGridTextColumn Header="Наименование" Binding="{Binding Path=Name, Mode=OneWay}"/>
-					<DataGridComboBoxColumn Header="Состояние" ItemsSource="{Binding Source={local:EnumBindingSource {x:Type local:TestingStatus}}, Mode=OneWay}"/>
+					<DataGridTextColumn Header="Состояние" Binding="{Binding Path=HealthStatus, Mode=OneWay}"/>
 					<DataGridTextColumn Header="Циклов чтения" Binding="{Binding Path=ReadCycles, Mode=OneWay}"/>
 					<DataGridTextColumn Header="Циклов записи" Binding="{Binding Path=WriteCycles, Mode=OneWay}"/>
 				</DataGrid.Columns>
@@ -59,8 +59,17 @@
 					</GroupBox.Header>
 					<StackPanel>
 						<StackPanel>
+							<StackPanel.Resources>
+								<local:TimeSpanConverter x:Key="tsc"/>
+							</StackPanel.Resources>
 							<Label Margin="3,3,3,0" Content="Период перезаписи данных:"/>
-							<ComboBox Name="CbRewritePeriod" ItemsSource="{Binding Path=Spans}" Margin="3,0,3,3" Padding="10,5" SelectedItem ="{Binding Path=SelectedDrive.Settings.RewritePeriod, Mode=TwoWay}"/>
+							<ComboBox Name="CbRewritePeriod" ItemsSource="{Binding Path=Spans, Mode=TwoWay}" Margin="3,0,3,3" Padding="10,5" SelectedItem ="{Binding Path=SelectedDrive.Settings.RewritePeriod, Mode=TwoWay}">
+								<ComboBox.ItemTemplate>
+									<DataTemplate>
+										<TextBlock Text="{Binding Path=., Converter={StaticResource tsc}}" />
+									</DataTemplate>
+								</ComboBox.ItemTemplate>
+							</ComboBox>
 						</StackPanel>
 						<CheckBox Name="CbCleanStart" Margin="5,3" VerticalAlignment="Center" Content="Форматировать" IsChecked="{Binding Path=SelectedDrive.Settings.CleanStart, Mode=TwoWay}" ToolTip="Форматировать устройство перед началом тестирования"/>
 					</StackPanel>

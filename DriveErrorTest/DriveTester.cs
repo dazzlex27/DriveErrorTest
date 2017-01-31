@@ -13,7 +13,6 @@ namespace DriveErrorTest
 		public event Action<int> OnErrorCountChanged;
 		public event Action<int> OnReadCyclesCountChanged;
 		public event Action<int> OnWriteCyclesCountChanged;
-		public event Action<string> OnTestingStatusChanged;
 		public event Action ErrorCountExceeded;
 		public event Action<string> OnCurrentFileChanged;
 		private readonly DriveTesterSettings _settings;
