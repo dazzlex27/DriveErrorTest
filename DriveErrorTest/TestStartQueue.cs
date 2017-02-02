@@ -19,15 +19,19 @@ namespace DriveErrorTest
 			StartInterval = span;
 
 			_driveQueue = new Queue<DriveInfoStorage>();
-			_timer = new Timer();
-			_timer.Interval = span;
+			_timer = new Timer { Interval = span };
 			_timer.Elapsed += TimerElapsed;
 		}
 
 		private void DequeueNext()
 		{
-			_driveQueue.Dequeue().StartTest();
-			_timer.Start();
+			var nextItem = _driveQueue.Dequeue();
+
+			if (nextItem.Running)
+			{
+				_driveQueue.Dequeue().StartTest();
+				_timer.Start();
+			}
 		}
 
 		private void TimerElapsed(object sender, ElapsedEventArgs e)

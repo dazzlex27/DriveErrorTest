@@ -52,6 +52,8 @@ namespace DriveErrorTest
 
 			CreateSpansList();
 			InitializeDriveManager();
+			CommonLogger.Initialize();
+			InitializeTrayIcon();
 			InitializeComponent();
 			InitializeAppComponents();
 
@@ -61,12 +63,10 @@ namespace DriveErrorTest
 
 		private void InitializeAppComponents()
 		{
-			CommonLogger.Initialize();
-
-			InitializeTrayIcon();
-
 			if (_driveManager.DriveList.Count == 0)
 				SetGuiAccess(false);
+			else
+				GrDrives.SelectedIndex = 0;
 		}
 
 		private static bool CheckIfMutexIsAvailable()
