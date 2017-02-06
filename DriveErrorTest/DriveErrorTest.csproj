@@ -67,18 +67,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="CommonLogger.cs" />
-    <Compile Include="Converters.cs" />
+    <Compile Include="Tester\DriveTesterLogic.cs" />
+    <Compile Include="Utilities\CommonLogger.cs" />
+    <Compile Include="Utilities\Converters.cs" />
     <Compile Include="DriveInfoStorage.cs" />
     <Compile Include="DriveManager.cs" />
-    <Compile Include="DriveTesterSettings.cs" />
-    <Compile Include="GlobalContext.cs" />
-    <Compile Include="GUIHelpers.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="SystemTrayHelper.cs" />
-    <Compile Include="DriveTester.cs" />
+    <Compile Include="Tester\DriveTesterSettings.cs" />
+    <Compile Include="Utilities\GlobalContext.cs" />
+    <Compile Include="Utilities\GUIHelpers.cs" />
+    <Compile Include="Utilities\Logger.cs" />
+    <Compile Include="Utilities\SystemTrayHelper.cs" />
+    <Compile Include="Tester\DriveTester.cs" />
     <Compile Include="TestStartQueue.cs" />
-    <Compile Include="Utilities.cs" />
+    <Compile Include="Utilities\FileHelpers.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

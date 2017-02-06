@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Threading;
+using DriveErrorTest.Tester;
 
 namespace DriveErrorTest
 {
