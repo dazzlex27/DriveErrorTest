@@ -10,10 +10,6 @@ namespace DriveErrorTest
 
 		public double StartInterval { get; private set; }
 
-		public TestStartQueue()
-		{
-		}
-
 		public void Initialize(double span)
 		{
 			StartInterval = span;
@@ -25,12 +21,18 @@ namespace DriveErrorTest
 
 		private void DequeueNext()
 		{
-			var nextItem = _driveQueue.Dequeue();
-
-			if (nextItem.Running)
+			while (true)
 			{
-				_driveQueue.Dequeue().StartTest();
-				_timer.Start();
+				var nextItem = _driveQueue.Dequeue();
+
+				if (nextItem.Running)
+				{
+					_driveQueue.Dequeue().StartTest();
+					_timer.Start();
+				}
+				else
+					continue;
+				break;
 			}
 		}
 
