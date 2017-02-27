@@ -253,9 +253,8 @@ namespace DriveErrorTest
 
 		private void BtStopAllDrives_OnClick(object sender, RoutedEventArgs e)
 		{
-			if (GUIHelpers.AskToConfirmTestAbortion())
-				foreach (var item in _driveManager.DriveList)
-					_driveManager.StopTest(item);
+			if (AskBeforeExit())
+				_driveManager.StopAllTests();
 		}
 
 		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
@@ -275,7 +274,7 @@ namespace DriveErrorTest
 			LbInputPath.Content = _driveManager.SourceDirectory.FullName;
 		}
 
-		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		private void Window_Closing(object sender, CancelEventArgs e)
 		{
 			Visibility = Visibility.Hidden;
 			e.Cancel = true;
