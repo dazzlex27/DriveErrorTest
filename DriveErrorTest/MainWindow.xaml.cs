@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using System.Windows;
@@ -9,51 +8,22 @@ using System.Windows.Shell;
 
 namespace DriveErrorTest
 {
-	/// <summary>
-	///     Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow : INotifyPropertyChanged
+	public partial class MainWindow
 	{
-		public event PropertyChangedEventHandler PropertyChanged;
-
-		private SystemTrayHelper _systemTrayHelper;
-		private DriveManager _driveManager;
-		private DriveInfoStorage _selectedDrive;
-
-		public List<TimeSpan> Spans { get; set; }
-
-		public DriveInfoStorage SelectedDrive
-		{
-			get { return _selectedDrive; }
-			set
-			{
-				_selectedDrive = value;
-				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("SelectedDrive"));
-			}
-		}
-
-		public DriveManager DriveManager
-		{
-			get { return _driveManager; }
-			set
-			{
-				_driveManager = value;
-				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("DriveManager"));
-			}
-		}
+		private MainWindowVm _viewModel;
 
 		public MainWindow()
 		{
 			if (!CheckIfMutexIsAvailable())
 			{
 				MessageBox.Show("Приложение уже запущено!", "Ошибка запуска", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-				ExitApp();
+				Application.Current.Shutdown();
 			}
 
-			CreateSpansList();
-			InitializeDriveManager();
-			CommonLogger.Initialize();
-			InitializeTrayIcon();
+			_viewModel = (MainWindowVm)DataContext;
+			_viewModel.ErrorOccured += ViewModel_ErrorOccured;
+			_viewModel.ShowWindowRequested += ViewModel_ShowWindowRequested;
+
 			InitializeComponent();
 			InitializeAppComponents();
 
@@ -61,9 +31,20 @@ namespace DriveErrorTest
 			TaskbarItemInfo = new TaskbarItemInfo();
 		}
 
+		private void ViewModel_ShowWindowRequested()
+		{
+			Visibility = IsVisible ? Visibility.Hidden : Visibility.Visible;
+		}
+
+		private void ViewModel_ErrorOccured(string exception, string message)
+		{
+			CommonLogger.LogException("Failed to start test: " + exception);
+			MessageBox.Show(message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+		}
+
 		private void InitializeAppComponents()
 		{
-			if (_driveManager.DriveList.Count == 0)
+			if (_viewModel.DriveManager.DriveList.Count == 0)
 				SetGuiAccess(false);
 			else
 				GrDrives.SelectedIndex = 0;
@@ -75,31 +56,6 @@ namespace DriveErrorTest
 			new Mutex(true, "MutexForFDT", out wasMutexCreated);
 
 			return wasMutexCreated;
-		}
-
-		private void InitializeTrayIcon()
-		{
-			_systemTrayHelper = new SystemTrayHelper();
-			_systemTrayHelper.Initialize();
-			_systemTrayHelper.ShowWindowEvent += SystemTrayHelper_ShowWindowEvent;
-			_systemTrayHelper.ShutAppDownEvent += SystemTrayHelper_ShutAppDownEvent;
-		}
-
-		private void InitializeDriveManager()
-		{
-			_driveManager = new DriveManager();
-			_driveManager.Initialize();
-		}
-
-		private void SystemTrayHelper_ShowWindowEvent()
-		{
-			Visibility = IsVisible ? Visibility.Hidden : Visibility.Visible;
-		}
-
-		private void SystemTrayHelper_ShutAppDownEvent()
-		{
-			if (AskBeforeExit())
-				ExitApp();
 		}
 
 		private void SetGuiAccess(bool active)
@@ -124,56 +80,9 @@ namespace DriveErrorTest
 			GUIHelpers.SetWindowTaskbarStatus(this, state, value);
 		}
 
-		private void CreateSpansList()
+		private bool ConfirmExit()
 		{
-			Spans = new List<TimeSpan>
-			{
-				new TimeSpan(0, 0, 10, 0),
-				new TimeSpan(0, 1, 0, 0),
-				new TimeSpan(0, 3, 0, 0),
-				new TimeSpan(0, 6, 0, 0),
-				new TimeSpan(0, 12, 0, 0),
-				new TimeSpan(1, 0, 0, 0),
-				new TimeSpan(2, 0, 0, 0),
-				new TimeSpan(3, 0, 0, 0),
-				new TimeSpan(7, 0, 0, 0)
-			};
-		}
-
-		private void DisposeComponents()
-		{
-			foreach (var item in _driveManager.DriveList)
-				_driveManager.StopTest(item);
-			_systemTrayHelper?.Dispose();
-		}
-
-		private void TryToStartTest(object item)
-		{
-			var temp = item as DriveInfoStorage;
-
-			if (_driveManager.SourceDirectory != null)
-			{
-				try
-				{
-					_driveManager.StartTest(temp);
-				}
-				catch (Exception ex)
-				{
-					CommonLogger.LogException("Failed to start test: " + ex);
-					MessageBox.Show(
-						"Не удалось запустить тестирование!" + Environment.NewLine + " Проверьте состояние устройства" + temp?.Name,
-						"Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-				}
-			}
-			else
-			{
-				GUIHelpers.ShowNoSourceSelectedMessage();
-			}
-		}
-
-		private bool AskBeforeExit()
-		{
-			if (_driveManager.TestsRunning)
+			if (_viewModel.TestsRunning)
 			{
 				if (GUIHelpers.AskToConfirmTestAbortion())
 					return true;
@@ -187,16 +96,10 @@ namespace DriveErrorTest
 			return false;
 		}
 
-		private void ExitApp()
-		{
-			DisposeComponents();
-			Application.Current.Shutdown(0);
-		}
-
 		private void MenuItem_OnClick(object sender, RoutedEventArgs e)
 		{
-			if (AskBeforeExit())
-				ExitApp();
+			if (ConfirmExit())
+				_viewModel.ExitApp();
 		}
 
 		private void BtStart_Click(object sender, RoutedEventArgs e)
@@ -204,13 +107,13 @@ namespace DriveErrorTest
 			if (GrDrives.SelectedIndex < 0)
 				return;
 
-			TryToStartTest(GrDrives.SelectedItem);
+			_viewModel.TryToStartTest(GrDrives.SelectedItem);
 		}
 
 		private void BtPauseTesting_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (GrDrives.SelectedIndex >= 0)
-				_driveManager.PauseTest(GrDrives.SelectedItem);
+				_viewModel.DriveManager.PauseTest(GrDrives.SelectedItem);
 		}
 
 		private void BtStop_Click(object sender, RoutedEventArgs e)
@@ -218,11 +121,11 @@ namespace DriveErrorTest
 			if (GrDrives.SelectedIndex < 0)
 				return;
 
-			if (!_driveManager.TestsRunning)
+			if (!_viewModel.DriveManager.TestsRunning)
 				return;
 
 			if (GUIHelpers.AskToConfirmTestAbortion())
-				_driveManager.StopTest(GrDrives.SelectedItem);
+				_viewModel.DriveManager.StopTest(GrDrives.SelectedItem);
 		}
 
 		private void GrDrives_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -242,25 +145,24 @@ namespace DriveErrorTest
 				CbRewritePeriod.IsEnabled = true;
 			}
 
-			SelectedDrive = item;
+			_viewModel.SelectedDrive = item;
 		}
 
 		private void BtStartAllDrives_OnClick(object sender, RoutedEventArgs e)
 		{
-			foreach (var item in _driveManager.DriveList)
-				TryToStartTest(item);
+			_viewModel.StartAllTests();
 		}
 
 		private void BtStopAllDrives_OnClick(object sender, RoutedEventArgs e)
 		{
-			if (AskBeforeExit())
-				_driveManager.StopAllTests();
+			if (ConfirmExit())
+				_viewModel.DriveManager.StopAllTests();
 		}
 
 		private void BtShowLog_OnClick(object sender, RoutedEventArgs e)
 		{
 			if (GrDrives.SelectedIndex >= 0)
-				_driveManager.ShowLogSelected(GrDrives.SelectedItem);
+				_viewModel.DriveManager.ShowLogSelected(GrDrives.SelectedItem);
 		}
 
 		private void BtSelectTestData_OnClick(object sender, RoutedEventArgs e)
@@ -270,8 +172,8 @@ namespace DriveErrorTest
 			if (dg.ShowDialog() != System.Windows.Forms.DialogResult.OK)
 				return;
 
-			_driveManager.SourceDirectory = new System.IO.DirectoryInfo(dg.SelectedPath);
-			LbInputPath.Content = _driveManager.SourceDirectory.FullName;
+			_viewModel.DriveManager.SourceDirectory = new System.IO.DirectoryInfo(dg.SelectedPath);
+			LbInputPath.Content = _viewModel.DriveManager.SourceDirectory.FullName;
 		}
 
 		private void Window_Closing(object sender, CancelEventArgs e)

@@ -10,8 +10,10 @@
 		Background="White" 
 		Closing="Window_Closing" 
 		Icon="res/Firstfear-Whistlepuff-Usb.ico" 
-		WindowStartupLocation="CenterScreen"
-		DataContext="{Binding RelativeSource={RelativeSource Self}}">
+		WindowStartupLocation="CenterScreen">
+	<Window.DataContext>
+		<local:MainWindowVm/>
+	</Window.DataContext>
 
 	<StackPanel>
 		<!-- Main menu -->
